@@ -53,12 +53,18 @@ const FocusDetection = () => {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
         
+        // Wait for video to actually start playing
         videoRef.current.onloadedmetadata = () => {
-          if (canvasRef.current && videoRef.current) {
-            canvasRef.current.width = videoRef.current.videoWidth;
-            canvasRef.current.height = videoRef.current.videoHeight;
-            updateCanvas();
-          }
+          videoRef.current.play().then(() => {
+            if (canvasRef.current && videoRef.current) {
+              canvasRef.current.width = videoRef.current.videoWidth;
+              canvasRef.current.height = videoRef.current.videoHeight;
+              // Small delay to ensure first frame is ready
+              setTimeout(() => {
+                updateCanvas();
+              }, 100);
+            }
+          });
         };
       }
     } catch (error) {
