@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Focus Detection</title>
+  <style>
+    body {
+      width: 400px;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    #video {
+      display: none;
+    }
+    #canvas {
+      width: 100%;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    #status {
+      padding: 10px;
+      border-radius: 5px;
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .focused {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .distracted {
+      background-color: #f44336;
+      color: white;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background-color: #2196F3;
+      color: white;
+    }
+    button:hover {
+      background-color: #0b7dda;
+    }
+    #info {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h2>Focus Detection System</h2>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+  <div id="status" class="focused">Status: Stopped</div>
+  <button id="toggleBtn">Start Detection</button>
+  <div id="info">Detection runs in background. You can close this popup after starting.</div>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -43,3 +43,21 @@ body {
 .hover\:bg-gray-750:hover {
   background-color: #2d3748;
 }
+
+/* GitHub Agent specific styles */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}

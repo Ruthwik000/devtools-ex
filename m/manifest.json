@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Focus Detection - Mobile Phone Alert",
+  "version": "1.0",
+  "description": "Detects mobile phone usage and alerts when distracted",
+  "permissions": [
+    "activeTab",
+    "notifications",
+    "scripting",
+    "offscreen"
+  ],
+  "host_permissions": [
+    "https://serverless.roboflow.com/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
