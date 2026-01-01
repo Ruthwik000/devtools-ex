@@ -48,6 +48,11 @@ async function buildExtension() {
   console.log('Copying background script...');
   copyFileSync('src/background/service-worker-bundle.js', 'dist/background.js');
   
+  // Copy offscreen files for focus detection
+  console.log('Copying offscreen files...');
+  copyFileSync('src/offscreen.html', 'dist/offscreen.html');
+  copyFileSync('src/offscreen.js', 'dist/offscreen.js');
+  
   console.log('✅ Build complete! Load the dist/ folder in Chrome.');
   console.log('');
   console.log('Next steps:');

@@ -12,10 +12,13 @@
     "declarativeNetRequestWithHostAccess",
     "scripting",
     "activeTab",
-    "webNavigation"
+    "webNavigation",
+    "offscreen",
+    "notifications"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "<all_urls>",
+    "https://serverless.roboflow.com/*"
   ],
   "background": {
     "service_worker": "background.js"
