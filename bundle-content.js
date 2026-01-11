@@ -20,7 +20,8 @@ const featureFiles = [
   'energy-scheduling.js',
   'speed-improver.js',
   'youtube-adblock.js',
-  'github-navigation.js'
+  'github-navigation.js',
+  'github-chatbot-ui.js'
 ];
 
 let bundledContent = `// Content Script Bundle - Auto-generated
@@ -83,7 +84,10 @@ function handleFeatureToggle(key, value) {
         break;
       case 'githubAgent':
         if (window.location.hostname.includes('github.com')) {
-          activeFeatures[key] = initGitHubNavigation();
+          activeFeatures[key] = {
+            chatbot: initGitHubChatbotUI(),
+            navigation: initGitHubNavigation()
+          };
         }
         break;
     }
