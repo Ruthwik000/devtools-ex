@@ -332,32 +332,38 @@ chrome.tabs.onCreated.addListener(async (tab) => {
     return;
   }
 
-  // Wait a bit for the tab to load its URL
+  // Wait for the tab to load its URL
   setTimeout(async () => {
-    const updatedTab = await chrome.tabs.get(tab.id).catch(() => null);
-    if (!updatedTab || !updatedTab.url) return;
+    try {
+      const updatedTab = await chrome.tabs.get(tab.id).catch(() => null);
+      if (!updatedTab || !updatedTab.url) return;
 
-    const url = new URL(updatedTab.url);
-    const domain = url.hostname.replace(/^www\./, '');
+      // Skip special URLs
+      if (updatedTab.url.startsWith('chrome://') || 
+          updatedTab.url.startsWith('chrome-extension://') ||
+          updatedTab.url.startsWith('about:') ||
+          updatedTab.url.startsWith('data:') ||
+          updatedTab.url === 'about:blank') {
+        return;
+      }
 
-    // Check if domain is whitelisted
-    const isWhitelisted = nuclearMode.whitelist.some(site => {
-      const cleanSite = site.replace(/^https?:\/\//, '').replace(/^www\./, '');
-      return domain.includes(cleanSite) || cleanSite.includes(domain);
-    });
+      const url = new URL(updatedTab.url);
+      const domain = url.hostname.replace(/^www\./, '');
 
-    // Block if not whitelisted (except chrome:// and extension pages)
-    if (!isWhitelisted && !url.protocol.startsWith('chrome') && !url.protocol.startsWith('about')) {
-      chrome.tabs.update(tab.id, {
-        url: 'data:text/html,<html><head><style>body{margin:0;padding:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1F2937 0%,#111827 100%);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:white;text-align:center}</style></head><body><div><h1 style="font-size:36px;margin:0 0 16px 0">Nuclear Mode Active</h1><p style="font-size:18px;color:#9CA3AF">This website is not whitelisted. Tab will close in 3 seconds...</p></div><script>setTimeout(()=>window.close(),3000)</script></body></html>'
+      // Check if domain is whitelisted
+      const isWhitelisted = nuclearMode.whitelist.some(site => {
+        const cleanSite = site.replace(/^https?:\/\//, '').replace(/^www\./, '');
+        return domain.includes(cleanSite) || cleanSite.includes(domain);
       });
-      
-      // Close the tab after 3 seconds
-      setTimeout(() => {
+
+      // Close tab if not whitelisted
+      if (!isWhitelisted) {
         chrome.tabs.remove(tab.id).catch(() => {});
-      }, 3000);
+      }
+    } catch (error) {
+      console.error('Error checking tab:', error);
     }
-  }, 500);
+  }, 1000);
 });
 
 // Nuclear Mode: Block navigation to non-whitelisted sites
@@ -376,20 +382,31 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
     return;
   }
 
-  const url = new URL(details.url);
-  const domain = url.hostname.replace(/^www\./, '');
+  // Skip special URLs
+  if (details.url.startsWith('chrome://') || 
+      details.url.startsWith('chrome-extension://') ||
+      details.url.startsWith('about:') ||
+      details.url.startsWith('data:') ||
+      details.url === 'about:blank') {
+    return;
+  }
 
-  // Check if domain is whitelisted
-  const isWhitelisted = nuclearMode.whitelist.some(site => {
-    const cleanSite = site.replace(/^https?:\/\//, '').replace(/^www\./, '');
-    return domain.includes(cleanSite) || cleanSite.includes(domain);
-  });
+  try {
+    const url = new URL(details.url);
+    const domain = url.hostname.replace(/^www\./, '');
 
-  // Block if not whitelisted (except chrome:// and extension pages)
-  if (!isWhitelisted && !url.protocol.startsWith('chrome') && !url.protocol.startsWith('about') && !url.protocol.startsWith('data')) {
-    chrome.tabs.update(details.tabId, {
-      url: 'data:text/html,<html><head><style>body{margin:0;padding:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1F2937 0%,#111827 100%);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:white;text-align:center}</style></head><body><div><h1 style="font-size:36px;margin:0 0 16px 0">Nuclear Mode Active</h1><p style="font-size:18px;color:#9CA3AF;margin-bottom:24px">This website is not whitelisted.</p><p style="font-size:14px;color:#6B7280">Only whitelisted sites are accessible during Nuclear Mode.</p></div></body></html>'
+    // Check if domain is whitelisted
+    const isWhitelisted = nuclearMode.whitelist.some(site => {
+      const cleanSite = site.replace(/^https?:\/\//, '').replace(/^www\./, '');
+      return domain.includes(cleanSite) || cleanSite.includes(domain);
     });
+
+    // Close tab if not whitelisted
+    if (!isWhitelisted) {
+      chrome.tabs.remove(details.tabId).catch(() => {});
+    }
+  } catch (error) {
+    console.error('Error checking navigation:', error);
   }
 });
 

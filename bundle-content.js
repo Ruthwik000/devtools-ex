@@ -15,6 +15,7 @@ const featureFiles = [
   'edit-cookie.js',
   'check-seo.js',
   'focus-mode.js',
+  'focus-detection.js',
   'passive-watching.js',
   'energy-scheduling.js',
   'speed-improver.js',
@@ -66,6 +67,9 @@ function handleFeatureToggle(key, value) {
         break;
       case 'focusMode':
         activeFeatures[key] = initFocusMode();
+        break;
+      case 'focusDetection':
+        activeFeatures[key] = initFocusDetection();
         break;
       case 'passiveWatching':
         activeFeatures[key] = initPassiveWatching();
