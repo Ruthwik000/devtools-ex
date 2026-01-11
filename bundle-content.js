@@ -19,7 +19,8 @@ const featureFiles = [
   'passive-watching.js',
   'energy-scheduling.js',
   'speed-improver.js',
-  'youtube-adblock.js'
+  'youtube-adblock.js',
+  'github-navigation.js'
 ];
 
 let bundledContent = `// Content Script Bundle - Auto-generated
@@ -79,6 +80,11 @@ function handleFeatureToggle(key, value) {
         break;
       case 'speedImprover':
         activeFeatures[key] = initSpeedImprover();
+        break;
+      case 'githubAgent':
+        if (window.location.hostname.includes('github.com')) {
+          activeFeatures[key] = initGitHubNavigation();
+        }
         break;
     }
   } else if (!value && activeFeatures[key]) {

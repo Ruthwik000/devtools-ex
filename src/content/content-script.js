@@ -8,6 +8,7 @@ import { initPassiveWatching } from './features/passive-watching.js';
 import { initEnergyScheduling } from './features/energy-scheduling.js';
 import { initSpeedImprover } from './features/speed-improver.js';
 import { initYouTubeAdBlock } from './features/youtube-adblock.js';
+import { initGitHubNavigation } from './features/github-navigation.js';
 
 let activeFeatures = {};
 let currentToggles = {};
@@ -76,9 +77,9 @@ function handleFeatureToggle(feature, enabled) {
       activeFeatures[feature] = initYouTubeAdBlock();
       break;
     case 'githubAgent':
-      // Integration hook for GitHub Agent
+      // GitHub Agent with navigation support
       if (window.location.hostname.includes('github.com')) {
-        console.log('GitHub Agent integration point - ready for teammate implementation');
+        activeFeatures[feature] = initGitHubNavigation();
       }
       break;
     case 'awsAgent':
