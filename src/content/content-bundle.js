@@ -3,6 +3,310 @@
 const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
 
 
+// ========== nuclear-mode-blocker.js ==========
+// Nuclear Mode Blocker - Runs IMMEDIATELY on page load (BEFORE anything else)
+// This is a standalone blocker that mimics the Site-Blocker-Chrome-Extension approach
+
+// Use the browserAPI that's already declared in the bundle
+console.log('🚀 Nuclear Mode Blocker: Script loaded');
+
+// Normalize URL by removing 'www.' from the beginning
+function normalizeURL(url) {
+  return url.replace(/^www\./i, "");
+}
+
+// Check if the current website should be blocked
+function shouldBlockWebsite(whitelistSet) {
+  const currentHostname = normalizeURL(window.location.hostname);
+  console.log('🔍 Nuclear Blocker: Checking hostname:', currentHostname);
+  console.log('🔍 Nuclear Blocker: Whitelist:', whitelistSet);
+  
+  // Check if current site is in whitelist
+  const isWhitelisted = whitelistSet.some(site => {
+    const normalizedSite = normalizeURL(site);
+    const matches = currentHostname === normalizedSite || currentHostname.includes(normalizedSite);
+    console.log(`  🔍 Comparing ${currentHostname} with ${normalizedSite}: ${matches}`);
+    return matches;
+  });
+  
+  console.log('🔍 Nuclear Blocker: Is whitelisted:', isWhitelisted);
+  return !isWhitelisted; // Block if NOT whitelisted
+}
+
+// Create the blocked page (EXACT same approach as reference)
+function createBlockedPage(endTime, wl) {
+  console.log('🔒 Nuclear Blocker: BLOCKING PAGE NOW!');
+  
+  // STOP page loading immediately
+  try {
+    window.stop();
+  } catch (e) {
+    console.log('Could not stop page loading:', e);
+  }
+  
+  // Clear EVERYTHING from HTML (like reference extension)
+  const html = document.querySelector("html");
+  if (html) {
+    html.innerHTML = "";
+  }
+  
+  const style = `
+    <style>
+      @import url("https://fonts.googleapis.com/css?family=Aboreto");
+
+      * {
+        user-select: none !important;
+        pointer-events: none !important;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        background: linear-gradient(135deg, #1F2937 0%, #111827 100%) !important;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+
+      #nuclear-block-container {
+        display: block !important;
+        color: #fff;
+        text-align: center;
+        max-width: 600px;
+        padding: 40px;
+        z-index: 999999999999;
+        pointer-events: auto !important;
+      }
+
+      .block-icon {
+        font-size: 96px;
+        margin-bottom: 32px;
+        animation: pulse 2s infinite;
+      }
+
+      .block-title {
+        font-size: 48px;
+        font-weight: 700;
+        color: #F9FAFB;
+        margin: 0 0 24px 0;
+      }
+
+      .block-subtitle {
+        font-size: 20px;
+        color: #9CA3AF;
+        margin-bottom: 40px;
+        line-height: 1.6;
+      }
+
+      .timer-box {
+        background: rgba(239, 68, 68, 0.1);
+        border: 2px solid #EF4444;
+        padding: 32px;
+        border-radius: 20px;
+        margin-bottom: 32px;
+      }
+
+      .timer-label {
+        font-size: 14px;
+        color: #FCA5A5;
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-weight: 700;
+      }
+
+      .timer-value {
+        font-size: 72px;
+        font-weight: 700;
+        color: #EF4444;
+        font-family: 'Courier New', monospace;
+      }
+
+      .whitelist-box {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid #374151;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+
+      .whitelist-title {
+        font-size: 16px;
+        color: #D1D5DB;
+        margin-bottom: 16px;
+        font-weight: 600;
+      }
+
+      .whitelist-item {
+        font-size: 15px;
+        color: #9CA3AF;
+        line-height: 2;
+        padding: 8px 0;
+      }
+
+      .warning-box {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid #EF4444;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+      }
+
+      .warning-text {
+        font-size: 16px;
+        color: #FCA5A5;
+        margin: 0;
+        font-weight: 600;
+      }
+
+      .footer-text {
+        font-size: 14px;
+        color: #6B7280;
+      }
+
+      @keyframes pulse {
+        0%, 100% { 
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% { 
+          transform: scale(1.1);
+          opacity: 0.8;
+        }
+      }
+    </style>
+  `;
+  
+  const timeLeft = Math.ceil((endTime - Date.now()) / 1000 / 60);
+  
+  // Add style to HTML
+  html.insertAdjacentHTML("beforeend", style);
+  
+  // Create body with blocked content
+  const body = document.createElement("body");
+  body.innerHTML = `
+    <div id="nuclear-block-container">
+      <div class="block-icon">🔒</div>
+      <h1 class="block-title">Nuclear Mode Active</h1>
+      <p class="block-subtitle">
+        This website is blocked. You can only access whitelisted sites during your focus session.
+      </p>
+      
+      <div class="timer-box">
+        <div class="timer-label">Time Remaining</div>
+        <div id="block-timer-value" class="timer-value">${timeLeft} min</div>
+      </div>
+
+      <div class="whitelist-box">
+        <div class="whitelist-title">✓ Whitelisted Sites</div>
+        ${wl.map(site => `<div class="whitelist-item">• ${site}</div>`).join('')}
+      </div>
+
+      <div class="warning-box">
+        <p class="warning-text">⚠️ Timer cannot be stopped. Stay focused!</p>
+      </div>
+
+      <p class="footer-text">
+        Navigate to a whitelisted site to continue working.
+      </p>
+    </div>
+  `;
+  
+  html.appendChild(body);
+  
+  // Update timer every second
+  setInterval(() => {
+    const remaining = Math.ceil((endTime - Date.now()) / 1000 / 60);
+    const timerEl = document.getElementById('block-timer-value');
+    if (timerEl) {
+      if (remaining > 0) {
+        timerEl.textContent = `${remaining} min`;
+      } else {
+        timerEl.textContent = 'Done!';
+        window.location.reload();
+      }
+    }
+  }, 1000);
+  
+  // Prevent all escape attempts
+  document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }, true);
+
+  document.addEventListener('keydown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }, true);
+}
+
+// Check if the website should be blocked and take appropriate action
+function check_if_restricted(nuclearMode) {
+  console.log('🔍 Nuclear Blocker: check_if_restricted called');
+  console.log('🔍 Nuclear Blocker: Nuclear Mode data:', nuclearMode);
+  
+  if (!nuclearMode || !nuclearMode.isActive || !nuclearMode.timerEndTime) {
+    console.log('❌ Nuclear Blocker: Nuclear Mode not active or no timer');
+    return;
+  }
+  
+  // Check if timer hasn't expired
+  if (Date.now() >= nuclearMode.timerEndTime) {
+    console.log('❌ Nuclear Blocker: Timer expired');
+    return;
+  }
+  
+  const whitelistSet = nuclearMode.whitelist || [];
+  
+  if (shouldBlockWebsite(whitelistSet)) {
+    console.log('🔒 Nuclear Blocker: SHOULD BLOCK - Creating blocked page');
+    createBlockedPage(nuclearMode.timerEndTime, whitelistSet);
+  } else {
+    console.log('✅ Nuclear Blocker: Site is whitelisted - allowing access');
+  }
+}
+
+// ============================================
+// IMMEDIATE EXECUTION (EXACT same as reference site blocker)
+// ============================================
+
+// Retrieve Nuclear Mode data from storage and block if needed
+browserAPI.storage.local.get("nuclearMode", function (data) {
+  console.log('📦 Nuclear Blocker: Storage data retrieved:', data);
+  const nuclearMode = data.nuclearMode || null;
+  
+  if (nuclearMode && nuclearMode.isActive && nuclearMode.timerEndTime) {
+    console.log('✅ Nuclear Blocker: Nuclear Mode is active with timer');
+    
+    // Check if timer hasn't expired
+    if (Date.now() < nuclearMode.timerEndTime) {
+      console.log('✅ Nuclear Blocker: Timer is still valid');
+      
+      // Call check function (EXACT same pattern as reference)
+      check_if_restricted(nuclearMode);
+    } else {
+      console.log('❌ Nuclear Blocker: Timer expired');
+    }
+  } else {
+    console.log('❌ Nuclear Blocker: Nuclear Mode not active or no data');
+  }
+});
+
+console.log('🚀 Nuclear Mode Blocker: Script execution complete');
+
+
 // ========== font-finder.js ==========
 // Font Finder Feature
 function initFontFinder() {
@@ -3630,15 +3934,316 @@ function initFocusDetection() {
 function initPassiveWatching() {
   const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
   
+  // Variables for Nuclear Mode state
   let panel = null;
   let whitelist = [];
   let timerEndTime = null;
   let timerInterval = null;
   let isActive = false;
   let isContextValid = true;
+  let floatingTimer = null;
 
-  // Check if extension context is valid
-  function checkContext() {
+  // Normalize URL by removing 'www.' from the beginning
+  function normalizeURL(url) {
+    return url.replace(/^www\./i, "");
+  }
+
+  // Check if the current website should be blocked
+  function shouldBlockWebsite(whitelistSet) {
+    const currentHostname = normalizeURL(window.location.hostname);
+    console.log('🔍 Checking if should block:', currentHostname);
+    console.log('🔍 Whitelist:', whitelistSet);
+    
+    // Check if current site is in whitelist
+    const isWhitelisted = whitelistSet.some(site => {
+      const normalizedSite = normalizeURL(site);
+      const matches = currentHostname === normalizedSite || currentHostname.includes(normalizedSite);
+      console.log(`  Comparing ${currentHostname} with ${normalizedSite}: ${matches}`);
+      return matches;
+    });
+    
+    console.log('🔍 Is whitelisted:', isWhitelisted);
+    return !isWhitelisted; // Block if NOT whitelisted
+  }
+
+  // Create the blocked page (EXACT same approach as reference)
+  function createBlockedPage(endTime, wl) {
+    console.log('🔒 BLOCKING PAGE NOW!');
+    const blockedPage = generateBlockedPageHTML(endTime, wl);
+    const style = generateBlockedPageStyle();
+    
+    // Inject the styles and blocked page into the current document
+    const head = document.head || document.getElementsByTagName("head")[0];
+    head.insertAdjacentHTML("beforeend", style);
+    document.body.innerHTML = blockedPage;
+    
+    // Update timer every second
+    setInterval(() => {
+      const remaining = Math.ceil((endTime - Date.now()) / 1000 / 60);
+      const timerEl = document.getElementById('block-timer-value');
+      if (timerEl) {
+        if (remaining > 0) {
+          timerEl.textContent = `${remaining} min`;
+        } else {
+          timerEl.textContent = 'Done!';
+          window.location.reload();
+        }
+      }
+    }, 1000);
+  }
+
+  // Check if the website should be blocked and take appropriate action
+  function check_if_restricted(nuclearMode) {
+    console.log('🔍 check_if_restricted called');
+    console.log('🔍 Nuclear Mode data:', nuclearMode);
+    
+    if (!nuclearMode || !nuclearMode.isActive || !nuclearMode.timerEndTime) {
+      console.log('❌ Nuclear Mode not active or no timer');
+      return false;
+    }
+    
+    // Check if timer hasn't expired
+    if (Date.now() >= nuclearMode.timerEndTime) {
+      console.log('❌ Timer expired');
+      return false;
+    }
+    
+    const whitelistSet = nuclearMode.whitelist || [];
+    
+    if (shouldBlockWebsite(whitelistSet)) {
+      console.log('🔒 SHOULD BLOCK - Creating blocked page');
+      createBlockedPage(nuclearMode.timerEndTime, whitelistSet);
+      return true;
+    }
+    
+    console.log('✅ Site is whitelisted - allowing access');
+    return false;
+  }
+
+  // ============================================
+  // IMMEDIATE BLOCKING CHECK (EXACT same as reference site blocker)
+  // ============================================
+  
+  // Retrieve Nuclear Mode data from storage and block if needed
+  browserAPI.storage.local.get("nuclearMode", function (data) {
+    console.log('📦 Storage data retrieved:', data);
+    const nuclearMode = data.nuclearMode || null;
+    
+    if (nuclearMode && nuclearMode.isActive && nuclearMode.timerEndTime) {
+      console.log('✅ Nuclear Mode is active with timer');
+      
+      // Check if timer hasn't expired
+      if (Date.now() < nuclearMode.timerEndTime) {
+        console.log('✅ Timer is still valid');
+        
+        // Call check function (EXACT same pattern as reference)
+        const wasBlocked = check_if_restricted(nuclearMode);
+        
+        if (wasBlocked) {
+          console.log('🔒 Page was blocked - stopping here');
+          return; // Stop here, don't initialize panel
+        }
+        
+        // Site is whitelisted, show floating timer
+        console.log('✅ Site whitelisted - showing floating timer');
+        whitelist = nuclearMode.whitelist || [];
+        timerEndTime = nuclearMode.timerEndTime;
+        isActive = true;
+        
+        // Create floating timer on whitelisted sites
+        setTimeout(() => {
+          createFloatingTimer();
+          startTimer();
+        }, 1000);
+      } else {
+        console.log('❌ Timer expired');
+      }
+    } else {
+      console.log('❌ Nuclear Mode not active or no data');
+    }
+    
+    // Continue with normal initialization (panel creation)
+    initializePanel();
+  });
+
+  function generateBlockedPageStyle() {
+    return `
+      <style>
+        * {
+          user-select: none !important;
+          pointer-events: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          box-sizing: border-box !important;
+        }
+
+        body {
+          display: flex !important;
+          justify-content: center !important;
+          align-items: center !important;
+          height: 100vh !important;
+          background: linear-gradient(135deg, #1F2937 0%, #111827 100%) !important;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+          overflow: hidden !important;
+        }
+
+        #nuclear-block-container {
+          display: block !important;
+          color: #fff !important;
+          text-align: center !important;
+          max-width: 600px !important;
+          padding: 40px !important;
+          pointer-events: auto !important;
+        }
+
+        .block-icon {
+          font-size: 96px !important;
+          margin-bottom: 32px !important;
+          animation: pulse 2s infinite !important;
+        }
+
+        .block-title {
+          font-size: 48px !important;
+          font-weight: 700 !important;
+          color: #F9FAFB !important;
+          margin: 0 0 24px 0 !important;
+        }
+
+        .block-subtitle {
+          font-size: 20px !important;
+          color: #9CA3AF !important;
+          margin-bottom: 40px !important;
+          line-height: 1.6 !important;
+        }
+
+        .timer-box {
+          background: rgba(239, 68, 68, 0.1) !important;
+          border: 2px solid #EF4444 !important;
+          padding: 32px !important;
+          border-radius: 20px !important;
+          margin-bottom: 32px !important;
+        }
+
+        .timer-label {
+          font-size: 14px !important;
+          color: #FCA5A5 !important;
+          margin-bottom: 16px !important;
+          text-transform: uppercase !important;
+          letter-spacing: 2px !important;
+          font-weight: 700 !important;
+        }
+
+        .timer-value {
+          font-size: 72px !important;
+          font-weight: 700 !important;
+          color: #EF4444 !important;
+          font-family: 'Courier New', monospace !important;
+        }
+
+        .whitelist-box {
+          background: rgba(255,255,255,0.05) !important;
+          border: 1px solid #374151 !important;
+          border-radius: 16px !important;
+          padding: 24px !important;
+          margin-bottom: 24px !important;
+        }
+
+        .whitelist-title {
+          font-size: 16px !important;
+          color: #D1D5DB !important;
+          margin-bottom: 16px !important;
+          font-weight: 600 !important;
+        }
+
+        .whitelist-item {
+          font-size: 15px !important;
+          color: #9CA3AF !important;
+          line-height: 2 !important;
+          padding: 8px 0 !important;
+        }
+
+        .warning-box {
+          background: rgba(239, 68, 68, 0.1) !important;
+          border: 1px solid #EF4444 !important;
+          border-radius: 12px !important;
+          padding: 20px !important;
+          margin-bottom: 24px !important;
+        }
+
+        .warning-text {
+          font-size: 16px !important;
+          color: #FCA5A5 !important;
+          margin: 0 !important;
+          font-weight: 600 !important;
+        }
+
+        .footer-text {
+          font-size: 14px !important;
+          color: #6B7280 !important;
+        }
+
+        @keyframes pulse {
+          0%, 100% { 
+            transform: scale(1);
+            opacity: 1;
+          }
+          50% { 
+            transform: scale(1.1);
+            opacity: 0.8;
+          }
+        }
+      </style>
+    `;
+  }
+
+  function generateBlockedPageHTML(endTime, wl) {
+    const timeLeft = Math.ceil((endTime - Date.now()) / 1000 / 60);
+    return `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Nuclear Mode - Site Blocked</title>
+      </head>
+      <body>
+        <div id="nuclear-block-container">
+          <div class="block-icon">🔒</div>
+          <h1 class="block-title">Nuclear Mode Active</h1>
+          <p class="block-subtitle">
+            This website is blocked. You can only access whitelisted sites during your focus session.
+          </p>
+          
+          <div class="timer-box">
+            <div class="timer-label">Time Remaining</div>
+            <div id="block-timer-value" class="timer-value">${timeLeft} min</div>
+          </div>
+
+          <div class="whitelist-box">
+            <div class="whitelist-title">✓ Whitelisted Sites</div>
+            ${wl.map(site => `<div class="whitelist-item">• ${site}</div>`).join('')}
+          </div>
+
+          <div class="warning-box">
+            <p class="warning-text">⚠️ Timer cannot be stopped. Stay focused!</p>
+          </div>
+
+          <p class="footer-text">
+            Navigate to a whitelisted site to continue working.
+          </p>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  // ============================================
+  // PANEL INITIALIZATION (Your existing UI - unchanged)
+  // ============================================
+  
+  function initializePanel() {
+    // Check if extension context is valid
+    function checkContext() {
     try {
       if (!browserAPI.runtime?.id) {
         isContextValid = false;
@@ -3722,7 +4327,7 @@ function initPassiveWatching() {
     });
   }
 
-  // Load saved settings
+  // Load saved settings (for panel updates)
   safeStorageGet(['nuclearMode']).then((result) => {
     if (!checkContext()) return;
     
@@ -3731,6 +4336,8 @@ function initPassiveWatching() {
       timerEndTime = result.nuclearMode.timerEndTime || null;
       isActive = result.nuclearMode.isActive || false;
       
+      console.log('Loaded from storage - isActive:', isActive, 'timerEndTime:', timerEndTime, 'whitelist:', whitelist);
+      
       if (isActive && timerEndTime) {
         // Check if timer expired
         if (Date.now() > timerEndTime) {
@@ -3738,6 +4345,7 @@ function initPassiveWatching() {
           return;
         }
         
+        // Block immediately if needed
         checkAndBlockSite();
         
         // Show floating timer on ALL tabs (whitelisted or not)
@@ -3769,7 +4377,11 @@ function initPassiveWatching() {
         if (!timerInterval) {
           startTimer();
         }
-      } else {
+      } else if (isActive === false && message.data.timerEndTime) {
+        // Timer was set but not activated yet - just update the values
+        console.log('Timer updated but not activated yet');
+      } else if (!isActive) {
+        // Nuclear mode was deactivated
         deactivateNuclearMode();
       }
     }
@@ -3809,29 +4421,284 @@ function initPassiveWatching() {
 
   // Check if current site is blocked
   function checkAndBlockSite() {
+    console.log('=== checkAndBlockSite called ===');
+    console.log('isActive:', isActive);
+    console.log('timerEndTime:', timerEndTime);
+    
     if (!checkContext()) return;
-    if (!isActive || !timerEndTime) return;
+    if (!isActive || !timerEndTime) {
+      console.log('Not active or no timer, skipping block check');
+      return;
+    }
     
     const now = Date.now();
     if (now > timerEndTime) {
       // Timer expired
+      console.log('Timer expired, deactivating');
       deactivateNuclearMode();
       return;
     }
 
     const currentDomain = window.location.hostname;
+    console.log('Current domain:', currentDomain);
+    console.log('Whitelist:', JSON.stringify(whitelist));
+    
     const isWhitelisted = whitelist.some(site => {
       const cleanSite = site.replace(/^https?:\/\//, '').replace(/^www\./, '');
       const cleanCurrent = currentDomain.replace(/^www\./, '');
-      return cleanCurrent.includes(cleanSite) || cleanSite.includes(cleanCurrent);
+      const matches = cleanCurrent.includes(cleanSite) || cleanSite.includes(cleanCurrent);
+      console.log(`Checking ${cleanSite} against ${cleanCurrent}: ${matches}`);
+      return matches;
     });
 
+    console.log('Is whitelisted:', isWhitelisted);
+
     if (!isWhitelisted) {
-      showBlockedPage();
+      console.log('BLOCKING SITE!');
+      blockSiteCompletely();
+    } else {
+      console.log('Site is whitelisted, allowing access');
     }
 
     // Add warning before closing browser/tab
     enableCloseWarning();
+  }
+
+  // Completely block the site (inspired by reference site blocker)
+  function blockSiteCompletely() {
+    if (!checkContext()) return;
+    
+    console.log('blockSiteCompletely called - clearing page');
+    
+    // Stop page loading
+    try {
+      window.stop();
+    } catch (e) {
+      console.log('Could not stop page loading:', e);
+    }
+    
+    // Remove all content from HTML
+    const html = document.querySelector("html");
+    if (!html) {
+      console.error('HTML element not found!');
+      return;
+    }
+    
+    html.innerHTML = "";
+    
+    // Add custom CSS
+    const style = document.createElement("style");
+    style.innerHTML = `
+      @import url("https://fonts.googleapis.com/css?family=Aboreto");
+      @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css");
+
+      * {
+        user-select: none !important;
+        pointer-events: none !important;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        background: linear-gradient(135deg, #1F2937 0%, #111827 100%) !important;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+
+      #nuclear-block-container {
+        display: block !important;
+        color: #fff;
+        text-align: center;
+        max-width: 600px;
+        padding: 40px;
+        z-index: 999999999999;
+        pointer-events: auto !important;
+      }
+
+      .block-icon {
+        font-size: 96px;
+        margin-bottom: 32px;
+        animation: pulse 2s infinite;
+      }
+
+      .block-title {
+        font-size: 48px;
+        font-weight: 700;
+        color: #F9FAFB;
+        margin: 0 0 24px 0;
+      }
+
+      .block-subtitle {
+        font-size: 20px;
+        color: #9CA3AF;
+        margin-bottom: 40px;
+        line-height: 1.6;
+      }
+
+      .timer-box {
+        background: rgba(239, 68, 68, 0.1);
+        border: 2px solid #EF4444;
+        padding: 32px;
+        border-radius: 20px;
+        margin-bottom: 32px;
+      }
+
+      .timer-label {
+        font-size: 14px;
+        color: #FCA5A5;
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-weight: 700;
+      }
+
+      .timer-value {
+        font-size: 72px;
+        font-weight: 700;
+        color: #EF4444;
+        font-family: 'Courier New', monospace;
+      }
+
+      .whitelist-box {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid #374151;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+
+      .whitelist-title {
+        font-size: 16px;
+        color: #D1D5DB;
+        margin-bottom: 16px;
+        font-weight: 600;
+      }
+
+      .whitelist-item {
+        font-size: 15px;
+        color: #9CA3AF;
+        line-height: 2;
+        padding: 8px 0;
+      }
+
+      .warning-box {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid #EF4444;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+      }
+
+      .warning-text {
+        font-size: 16px;
+        color: #FCA5A5;
+        margin: 0;
+        font-weight: 600;
+      }
+
+      .footer-text {
+        font-size: 14px;
+        color: #6B7280;
+      }
+
+      @keyframes pulse {
+        0%, 100% { 
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% { 
+          transform: scale(1.1);
+          opacity: 0.8;
+        }
+      }
+    `;
+    html.appendChild(style);
+
+    // Create block container
+    const timeLeft = Math.ceil((timerEndTime - Date.now()) / 1000 / 60);
+    const container = document.createElement("div");
+    container.id = "nuclear-block-container";
+    container.innerHTML = `
+      <div class="block-icon">🔒</div>
+      <h1 class="block-title">Nuclear Mode Active</h1>
+      <p class="block-subtitle">
+        This website is blocked. You can only access whitelisted sites during your focus session.
+      </p>
+      
+      <div class="timer-box">
+        <div class="timer-label">Time Remaining</div>
+        <div id="block-timer-value" class="timer-value">${timeLeft} min</div>
+      </div>
+
+      <div class="whitelist-box">
+        <div class="whitelist-title">✓ Whitelisted Sites</div>
+        ${whitelist.map(site => `<div class="whitelist-item">• ${site}</div>`).join('')}
+      </div>
+
+      <div class="warning-box">
+        <p class="warning-text">⚠️ Timer cannot be stopped. Stay focused!</p>
+      </div>
+
+      <p class="footer-text">
+        Navigate to a whitelisted site to continue working.
+      </p>
+    `;
+
+    html.appendChild(container);
+    
+    console.log('Block screen created and displayed');
+
+    // Update timer every second
+    const updateTimer = setInterval(() => {
+      if (!checkContext()) {
+        clearInterval(updateTimer);
+        return;
+      }
+      
+      const remaining = Math.ceil((timerEndTime - Date.now()) / 1000 / 60);
+      const timerEl = document.getElementById('block-timer-value');
+      if (timerEl) {
+        if (remaining > 0) {
+          timerEl.textContent = `${remaining} min`;
+        } else {
+          timerEl.textContent = 'Done!';
+          clearInterval(updateTimer);
+          // Reload to deactivate
+          window.location.reload();
+        }
+      }
+    }, 1000);
+
+    // Prevent all escape attempts
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }, true);
+
+    document.addEventListener('keydown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }, true);
+
+    // Prevent navigation
+    window.addEventListener('beforeunload', (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    });
   }
 
   // Prevent closing browser/tab with warning
@@ -3857,124 +4724,9 @@ function initPassiveWatching() {
     }
   }
 
-  // Show blocked page overlay
-  function showBlockedPage() {
-    if (!checkContext()) return;
-    
-    const overlay = document.createElement('div');
-    overlay.id = 'nuclear-mode-block';
-    overlay.style.cssText = `
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-      background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
-      z-index: 2147483646; display: flex; align-items: center; justify-content: center;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    `;
 
-    const timeLeft = Math.ceil((timerEndTime - Date.now()) / 1000 / 60);
-    
-    overlay.innerHTML = `
-      <div style="text-align: center; color: white; max-width: 500px; padding: 40px;">
-        <div style="font-size: 72px; margin-bottom: 24px;">🔒</div>
-        <h1 style="font-size: 36px; margin: 0 0 16px 0; font-weight: 700;">Nuclear Mode Active</h1>
-        <p style="font-size: 18px; color: #9CA3AF; margin-bottom: 32px;">
-          This website is blocked. You can only access whitelisted sites.
-        </p>
-        <div style="background: rgba(239, 68, 68, 0.1); border: 2px solid #EF4444; padding: 24px; border-radius: 16px; margin-bottom: 24px;">
-          <div style="font-size: 14px; color: #FCA5A5; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Time Remaining</div>
-          <div id="block-timer" style="font-size: 64px; font-weight: 700; color: #EF4444;">${timeLeft} min</div>
-        </div>
-        <div style="background: rgba(255,255,255,0.05); border: 1px solid #374151; border-radius: 12px; padding: 20px; margin-bottom: 16px;">
-          <div style="font-size: 14px; color: #D1D5DB; margin-bottom: 12px; font-weight: 600;">Whitelisted Sites:</div>
-          <div style="font-size: 13px; color: #9CA3AF; line-height: 1.8;">
-            ${whitelist.map(site => `<div>✓ ${site}</div>`).join('')}
-          </div>
-        </div>
-        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #EF4444; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-          <p style="font-size: 14px; color: #FCA5A5; margin: 0;">
-            ⚠️ Timer cannot be stopped. Stay focused!
-          </p>
-        </div>
-        <p style="font-size: 14px; color: #6B7280;">
-          Navigate to a whitelisted site to continue working.
-        </p>
-      </div>
-    `;
 
-    document.body.innerHTML = '';
-    document.body.appendChild(overlay);
 
-    // Prevent right-click and shortcuts
-    document.addEventListener('contextmenu', preventEscape, true);
-    document.addEventListener('keydown', preventEscapeKeys, true);
-
-    // Update timer every second
-    const updateBlockTimer = setInterval(() => {
-      if (!checkContext()) {
-        clearInterval(updateBlockTimer);
-        return;
-      }
-      
-      const remaining = Math.ceil((timerEndTime - Date.now()) / 1000 / 60);
-      const timerEl = document.getElementById('block-timer');
-      if (timerEl) {
-        if (remaining > 0) {
-          timerEl.textContent = `${remaining} min`;
-        } else {
-          timerEl.textContent = 'Done!';
-          clearInterval(updateBlockTimer);
-          deactivateNuclearMode();
-          window.location.reload();
-        }
-      }
-    }, 1000);
-  }
-
-  // Prevent escape attempts
-  function preventEscape(e) {
-    if (!checkContext()) return;
-    e.preventDefault();
-    e.stopPropagation();
-    return false;
-  }
-
-  function preventEscapeKeys(e) {
-    if (!checkContext()) return;
-    
-    // Prevent: F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+W, Ctrl+T, Alt+F4
-    if (
-      e.key === 'F12' ||
-      (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
-      (e.ctrlKey && e.key === 'u') ||
-      (e.ctrlKey && e.key === 'w') ||
-      (e.ctrlKey && e.key === 't') ||
-      (e.altKey && e.key === 'F4')
-    ) {
-      e.preventDefault();
-      e.stopPropagation();
-      showWarningNotification('Nuclear Mode is active! Stay focused!');
-      return false;
-    }
-  }
-
-  function showWarningNotification(message) {
-    if (!checkContext()) return;
-    
-    const notif = document.createElement('div');
-    notif.textContent = message;
-    notif.style.cssText = `
-      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-      background: #EF4444; color: white; padding: 16px 24px; border-radius: 8px;
-      font-size: 16px; font-weight: 600; z-index: 9999999999;
-      box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
-      animation: shake 0.5s;
-    `;
-    document.body.appendChild(notif);
-    setTimeout(() => {
-      if (notif && notif.parentNode) {
-        notif.remove();
-      }
-    }, 3000);
-  }
 
   // Create control panel
   function createPanel() {
@@ -4317,11 +5069,18 @@ function initPassiveWatching() {
   }
 
   // Set timer
-  function setTimer(minutes) {
+  async function setTimer(minutes) {
+    console.log('=== setTimer called ===');
+    console.log('Setting timer for', minutes, 'minutes');
     timerEndTime = Date.now() + (minutes * 60 * 1000);
-    saveSettings();
-    updateTimerDisplay();
-    startTimer();
+    console.log('timerEndTime set to:', timerEndTime);
+    console.log('Timer will end at:', new Date(timerEndTime).toLocaleTimeString());
+    
+    await saveSettings();
+    console.log('Settings saved after timer set');
+    
+    // Show visual feedback
+    alert(`✓ Timer set for ${minutes} minutes! Click "Activate Nuclear Mode" to start.`);
   }
 
   // Start timer countdown
@@ -4346,6 +5105,10 @@ function initPassiveWatching() {
 
   // Activate nuclear mode
   function activateNuclearMode() {
+    console.log('=== activateNuclearMode called ===');
+    console.log('Whitelist length:', whitelist.length);
+    console.log('timerEndTime:', timerEndTime);
+    
     if (whitelist.length === 0) {
       alert('⚠️ Please add at least one website to the whitelist!');
       return;
@@ -4364,6 +5127,9 @@ function initPassiveWatching() {
     
     // Create floating timer (will appear on all tabs via message)
     createFloatingTimer();
+    
+    // Start the timer countdown
+    startTimer();
     
     // Check and block current site if needed
     checkAndBlockSite();
@@ -4486,10 +5252,10 @@ function initPassiveWatching() {
     // Remove block overlay if exists
     const blockOverlay = document.getElementById('nuclear-mode-block');
     if (blockOverlay) blockOverlay.remove();
-
-    // Remove event listeners
-    document.removeEventListener('contextmenu', preventEscape, true);
-    document.removeEventListener('keydown', preventEscapeKeys, true);
+    
+    // Remove block container if exists
+    const blockContainer = document.getElementById('nuclear-block-container');
+    if (blockContainer) blockContainer.remove();
   }
 
   // Show active state
@@ -4600,8 +5366,8 @@ function initPassiveWatching() {
     if (floatingTimer && floatingTimer.parentNode) floatingTimer.remove();
     if (timerInterval) clearInterval(timerInterval);
     disableCloseWarning();
-    document.removeEventListener('contextmenu', preventEscape, true);
-    document.removeEventListener('keydown', preventEscapeKeys, true);
+    const blockContainer = document.getElementById('nuclear-block-container');
+    if (blockContainer) blockContainer.remove();
     if (style && style.parentNode) style.remove();
     isContextValid = false;
   }
@@ -4609,6 +5375,7 @@ function initPassiveWatching() {
   return {
     cleanup: cleanup
   };
+  } // End of initializePanel()
 }
 
 

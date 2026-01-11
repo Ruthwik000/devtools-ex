@@ -10,6 +10,7 @@ console.log('Bundling content scripts...');
 // Read all feature files
 const featuresDir = path.join(__dirname, 'src', 'content', 'features');
 const featureFiles = [
+  'nuclear-mode-blocker.js', // MUST BE FIRST - blocks sites immediately
   'font-finder.js',
   'color-finder.js',
   'edit-cookie.js',
