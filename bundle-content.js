@@ -10,6 +10,7 @@ console.log('Bundling content scripts...');
 // Read all feature files
 const featuresDir = path.join(__dirname, 'src', 'content', 'features');
 const featureFiles = [
+  'nuclear-mode-blocker.js', // MUST BE FIRST - blocks sites immediately
   'font-finder.js',
   'color-finder.js',
   'edit-cookie.js',
@@ -19,7 +20,9 @@ const featureFiles = [
   'passive-watching.js',
   'energy-scheduling.js',
   'speed-improver.js',
-  'youtube-adblock.js'
+  'youtube-adblock.js',
+  'github-navigation.js',
+  'github-chatbot-ui.js'
 ];
 
 let bundledContent = `// Content Script Bundle - Auto-generated
@@ -79,6 +82,14 @@ function handleFeatureToggle(key, value) {
         break;
       case 'speedImprover':
         activeFeatures[key] = initSpeedImprover();
+        break;
+      case 'githubAgent':
+        if (window.location.hostname.includes('github.com')) {
+          activeFeatures[key] = {
+            chatbot: initGitHubChatbotUI(),
+            navigation: initGitHubNavigation()
+          };
+        }
         break;
     }
   } else if (!value && activeFeatures[key]) {

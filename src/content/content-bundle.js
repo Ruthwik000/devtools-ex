@@ -3,6 +3,310 @@
 const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
 
 
+// ========== nuclear-mode-blocker.js ==========
+// Nuclear Mode Blocker - Runs IMMEDIATELY on page load (BEFORE anything else)
+// This is a standalone blocker that mimics the Site-Blocker-Chrome-Extension approach
+
+// Use the browserAPI that's already declared in the bundle
+console.log('🚀 Nuclear Mode Blocker: Script loaded');
+
+// Normalize URL by removing 'www.' from the beginning
+function normalizeURL(url) {
+  return url.replace(/^www\./i, "");
+}
+
+// Check if the current website should be blocked
+function shouldBlockWebsite(whitelistSet) {
+  const currentHostname = normalizeURL(window.location.hostname);
+  console.log('🔍 Nuclear Blocker: Checking hostname:', currentHostname);
+  console.log('🔍 Nuclear Blocker: Whitelist:', whitelistSet);
+  
+  // Check if current site is in whitelist
+  const isWhitelisted = whitelistSet.some(site => {
+    const normalizedSite = normalizeURL(site);
+    const matches = currentHostname === normalizedSite || currentHostname.includes(normalizedSite);
+    console.log(`  🔍 Comparing ${currentHostname} with ${normalizedSite}: ${matches}`);
+    return matches;
+  });
+  
+  console.log('🔍 Nuclear Blocker: Is whitelisted:', isWhitelisted);
+  return !isWhitelisted; // Block if NOT whitelisted
+}
+
+// Create the blocked page (EXACT same approach as reference)
+function createBlockedPage(endTime, wl) {
+  console.log('🔒 Nuclear Blocker: BLOCKING PAGE NOW!');
+  
+  // STOP page loading immediately
+  try {
+    window.stop();
+  } catch (e) {
+    console.log('Could not stop page loading:', e);
+  }
+  
+  // Clear EVERYTHING from HTML (like reference extension)
+  const html = document.querySelector("html");
+  if (html) {
+    html.innerHTML = "";
+  }
+  
+  const style = `
+    <style>
+      @import url("https://fonts.googleapis.com/css?family=Aboreto");
+
+      * {
+        user-select: none !important;
+        pointer-events: none !important;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        background: linear-gradient(135deg, #1F2937 0%, #111827 100%) !important;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+
+      #nuclear-block-container {
+        display: block !important;
+        color: #fff;
+        text-align: center;
+        max-width: 600px;
+        padding: 40px;
+        z-index: 999999999999;
+        pointer-events: auto !important;
+      }
+
+      .block-icon {
+        font-size: 96px;
+        margin-bottom: 32px;
+        animation: pulse 2s infinite;
+      }
+
+      .block-title {
+        font-size: 48px;
+        font-weight: 700;
+        color: #F9FAFB;
+        margin: 0 0 24px 0;
+      }
+
+      .block-subtitle {
+        font-size: 20px;
+        color: #9CA3AF;
+        margin-bottom: 40px;
+        line-height: 1.6;
+      }
+
+      .timer-box {
+        background: rgba(239, 68, 68, 0.1);
+        border: 2px solid #EF4444;
+        padding: 32px;
+        border-radius: 20px;
+        margin-bottom: 32px;
+      }
+
+      .timer-label {
+        font-size: 14px;
+        color: #FCA5A5;
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-weight: 700;
+      }
+
+      .timer-value {
+        font-size: 72px;
+        font-weight: 700;
+        color: #EF4444;
+        font-family: 'Courier New', monospace;
+      }
+
+      .whitelist-box {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid #374151;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+
+      .whitelist-title {
+        font-size: 16px;
+        color: #D1D5DB;
+        margin-bottom: 16px;
+        font-weight: 600;
+      }
+
+      .whitelist-item {
+        font-size: 15px;
+        color: #9CA3AF;
+        line-height: 2;
+        padding: 8px 0;
+      }
+
+      .warning-box {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid #EF4444;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+      }
+
+      .warning-text {
+        font-size: 16px;
+        color: #FCA5A5;
+        margin: 0;
+        font-weight: 600;
+      }
+
+      .footer-text {
+        font-size: 14px;
+        color: #6B7280;
+      }
+
+      @keyframes pulse {
+        0%, 100% { 
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% { 
+          transform: scale(1.1);
+          opacity: 0.8;
+        }
+      }
+    </style>
+  `;
+  
+  const timeLeft = Math.ceil((endTime - Date.now()) / 1000 / 60);
+  
+  // Add style to HTML
+  html.insertAdjacentHTML("beforeend", style);
+  
+  // Create body with blocked content
+  const body = document.createElement("body");
+  body.innerHTML = `
+    <div id="nuclear-block-container">
+      <div class="block-icon">🔒</div>
+      <h1 class="block-title">Nuclear Mode Active</h1>
+      <p class="block-subtitle">
+        This website is blocked. You can only access whitelisted sites during your focus session.
+      </p>
+      
+      <div class="timer-box">
+        <div class="timer-label">Time Remaining</div>
+        <div id="block-timer-value" class="timer-value">${timeLeft} min</div>
+      </div>
+
+      <div class="whitelist-box">
+        <div class="whitelist-title">✓ Whitelisted Sites</div>
+        ${wl.map(site => `<div class="whitelist-item">• ${site}</div>`).join('')}
+      </div>
+
+      <div class="warning-box">
+        <p class="warning-text">⚠️ Timer cannot be stopped. Stay focused!</p>
+      </div>
+
+      <p class="footer-text">
+        Navigate to a whitelisted site to continue working.
+      </p>
+    </div>
+  `;
+  
+  html.appendChild(body);
+  
+  // Update timer every second
+  setInterval(() => {
+    const remaining = Math.ceil((endTime - Date.now()) / 1000 / 60);
+    const timerEl = document.getElementById('block-timer-value');
+    if (timerEl) {
+      if (remaining > 0) {
+        timerEl.textContent = `${remaining} min`;
+      } else {
+        timerEl.textContent = 'Done!';
+        window.location.reload();
+      }
+    }
+  }, 1000);
+  
+  // Prevent all escape attempts
+  document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }, true);
+
+  document.addEventListener('keydown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }, true);
+}
+
+// Check if the website should be blocked and take appropriate action
+function check_if_restricted(nuclearMode) {
+  console.log('🔍 Nuclear Blocker: check_if_restricted called');
+  console.log('🔍 Nuclear Blocker: Nuclear Mode data:', nuclearMode);
+  
+  if (!nuclearMode || !nuclearMode.isActive || !nuclearMode.timerEndTime) {
+    console.log('❌ Nuclear Blocker: Nuclear Mode not active or no timer');
+    return;
+  }
+  
+  // Check if timer hasn't expired
+  if (Date.now() >= nuclearMode.timerEndTime) {
+    console.log('❌ Nuclear Blocker: Timer expired');
+    return;
+  }
+  
+  const whitelistSet = nuclearMode.whitelist || [];
+  
+  if (shouldBlockWebsite(whitelistSet)) {
+    console.log('🔒 Nuclear Blocker: SHOULD BLOCK - Creating blocked page');
+    createBlockedPage(nuclearMode.timerEndTime, whitelistSet);
+  } else {
+    console.log('✅ Nuclear Blocker: Site is whitelisted - allowing access');
+  }
+}
+
+// ============================================
+// IMMEDIATE EXECUTION (EXACT same as reference site blocker)
+// ============================================
+
+// Retrieve Nuclear Mode data from storage and block if needed
+browserAPI.storage.local.get("nuclearMode", function (data) {
+  console.log('📦 Nuclear Blocker: Storage data retrieved:', data);
+  const nuclearMode = data.nuclearMode || null;
+  
+  if (nuclearMode && nuclearMode.isActive && nuclearMode.timerEndTime) {
+    console.log('✅ Nuclear Blocker: Nuclear Mode is active with timer');
+    
+    // Check if timer hasn't expired
+    if (Date.now() < nuclearMode.timerEndTime) {
+      console.log('✅ Nuclear Blocker: Timer is still valid');
+      
+      // Call check function (EXACT same pattern as reference)
+      check_if_restricted(nuclearMode);
+    } else {
+      console.log('❌ Nuclear Blocker: Timer expired');
+    }
+  } else {
+    console.log('❌ Nuclear Blocker: Nuclear Mode not active or no data');
+  }
+});
+
+console.log('🚀 Nuclear Mode Blocker: Script execution complete');
+
+
 // ========== font-finder.js ==========
 // Font Finder Feature
 function initFontFinder() {
@@ -3630,15 +3934,316 @@ function initFocusDetection() {
 function initPassiveWatching() {
   const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
   
+  // Variables for Nuclear Mode state
   let panel = null;
   let whitelist = [];
   let timerEndTime = null;
   let timerInterval = null;
   let isActive = false;
   let isContextValid = true;
+  let floatingTimer = null;
 
-  // Check if extension context is valid
-  function checkContext() {
+  // Normalize URL by removing 'www.' from the beginning
+  function normalizeURL(url) {
+    return url.replace(/^www\./i, "");
+  }
+
+  // Check if the current website should be blocked
+  function shouldBlockWebsite(whitelistSet) {
+    const currentHostname = normalizeURL(window.location.hostname);
+    console.log('🔍 Checking if should block:', currentHostname);
+    console.log('🔍 Whitelist:', whitelistSet);
+    
+    // Check if current site is in whitelist
+    const isWhitelisted = whitelistSet.some(site => {
+      const normalizedSite = normalizeURL(site);
+      const matches = currentHostname === normalizedSite || currentHostname.includes(normalizedSite);
+      console.log(`  Comparing ${currentHostname} with ${normalizedSite}: ${matches}`);
+      return matches;
+    });
+    
+    console.log('🔍 Is whitelisted:', isWhitelisted);
+    return !isWhitelisted; // Block if NOT whitelisted
+  }
+
+  // Create the blocked page (EXACT same approach as reference)
+  function createBlockedPage(endTime, wl) {
+    console.log('🔒 BLOCKING PAGE NOW!');
+    const blockedPage = generateBlockedPageHTML(endTime, wl);
+    const style = generateBlockedPageStyle();
+    
+    // Inject the styles and blocked page into the current document
+    const head = document.head || document.getElementsByTagName("head")[0];
+    head.insertAdjacentHTML("beforeend", style);
+    document.body.innerHTML = blockedPage;
+    
+    // Update timer every second
+    setInterval(() => {
+      const remaining = Math.ceil((endTime - Date.now()) / 1000 / 60);
+      const timerEl = document.getElementById('block-timer-value');
+      if (timerEl) {
+        if (remaining > 0) {
+          timerEl.textContent = `${remaining} min`;
+        } else {
+          timerEl.textContent = 'Done!';
+          window.location.reload();
+        }
+      }
+    }, 1000);
+  }
+
+  // Check if the website should be blocked and take appropriate action
+  function check_if_restricted(nuclearMode) {
+    console.log('🔍 check_if_restricted called');
+    console.log('🔍 Nuclear Mode data:', nuclearMode);
+    
+    if (!nuclearMode || !nuclearMode.isActive || !nuclearMode.timerEndTime) {
+      console.log('❌ Nuclear Mode not active or no timer');
+      return false;
+    }
+    
+    // Check if timer hasn't expired
+    if (Date.now() >= nuclearMode.timerEndTime) {
+      console.log('❌ Timer expired');
+      return false;
+    }
+    
+    const whitelistSet = nuclearMode.whitelist || [];
+    
+    if (shouldBlockWebsite(whitelistSet)) {
+      console.log('🔒 SHOULD BLOCK - Creating blocked page');
+      createBlockedPage(nuclearMode.timerEndTime, whitelistSet);
+      return true;
+    }
+    
+    console.log('✅ Site is whitelisted - allowing access');
+    return false;
+  }
+
+  // ============================================
+  // IMMEDIATE BLOCKING CHECK (EXACT same as reference site blocker)
+  // ============================================
+  
+  // Retrieve Nuclear Mode data from storage and block if needed
+  browserAPI.storage.local.get("nuclearMode", function (data) {
+    console.log('📦 Storage data retrieved:', data);
+    const nuclearMode = data.nuclearMode || null;
+    
+    if (nuclearMode && nuclearMode.isActive && nuclearMode.timerEndTime) {
+      console.log('✅ Nuclear Mode is active with timer');
+      
+      // Check if timer hasn't expired
+      if (Date.now() < nuclearMode.timerEndTime) {
+        console.log('✅ Timer is still valid');
+        
+        // Call check function (EXACT same pattern as reference)
+        const wasBlocked = check_if_restricted(nuclearMode);
+        
+        if (wasBlocked) {
+          console.log('🔒 Page was blocked - stopping here');
+          return; // Stop here, don't initialize panel
+        }
+        
+        // Site is whitelisted, show floating timer
+        console.log('✅ Site whitelisted - showing floating timer');
+        whitelist = nuclearMode.whitelist || [];
+        timerEndTime = nuclearMode.timerEndTime;
+        isActive = true;
+        
+        // Create floating timer on whitelisted sites
+        setTimeout(() => {
+          createFloatingTimer();
+          startTimer();
+        }, 1000);
+      } else {
+        console.log('❌ Timer expired');
+      }
+    } else {
+      console.log('❌ Nuclear Mode not active or no data');
+    }
+    
+    // Continue with normal initialization (panel creation)
+    initializePanel();
+  });
+
+  function generateBlockedPageStyle() {
+    return `
+      <style>
+        * {
+          user-select: none !important;
+          pointer-events: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          box-sizing: border-box !important;
+        }
+
+        body {
+          display: flex !important;
+          justify-content: center !important;
+          align-items: center !important;
+          height: 100vh !important;
+          background: linear-gradient(135deg, #1F2937 0%, #111827 100%) !important;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+          overflow: hidden !important;
+        }
+
+        #nuclear-block-container {
+          display: block !important;
+          color: #fff !important;
+          text-align: center !important;
+          max-width: 600px !important;
+          padding: 40px !important;
+          pointer-events: auto !important;
+        }
+
+        .block-icon {
+          font-size: 96px !important;
+          margin-bottom: 32px !important;
+          animation: pulse 2s infinite !important;
+        }
+
+        .block-title {
+          font-size: 48px !important;
+          font-weight: 700 !important;
+          color: #F9FAFB !important;
+          margin: 0 0 24px 0 !important;
+        }
+
+        .block-subtitle {
+          font-size: 20px !important;
+          color: #9CA3AF !important;
+          margin-bottom: 40px !important;
+          line-height: 1.6 !important;
+        }
+
+        .timer-box {
+          background: rgba(239, 68, 68, 0.1) !important;
+          border: 2px solid #EF4444 !important;
+          padding: 32px !important;
+          border-radius: 20px !important;
+          margin-bottom: 32px !important;
+        }
+
+        .timer-label {
+          font-size: 14px !important;
+          color: #FCA5A5 !important;
+          margin-bottom: 16px !important;
+          text-transform: uppercase !important;
+          letter-spacing: 2px !important;
+          font-weight: 700 !important;
+        }
+
+        .timer-value {
+          font-size: 72px !important;
+          font-weight: 700 !important;
+          color: #EF4444 !important;
+          font-family: 'Courier New', monospace !important;
+        }
+
+        .whitelist-box {
+          background: rgba(255,255,255,0.05) !important;
+          border: 1px solid #374151 !important;
+          border-radius: 16px !important;
+          padding: 24px !important;
+          margin-bottom: 24px !important;
+        }
+
+        .whitelist-title {
+          font-size: 16px !important;
+          color: #D1D5DB !important;
+          margin-bottom: 16px !important;
+          font-weight: 600 !important;
+        }
+
+        .whitelist-item {
+          font-size: 15px !important;
+          color: #9CA3AF !important;
+          line-height: 2 !important;
+          padding: 8px 0 !important;
+        }
+
+        .warning-box {
+          background: rgba(239, 68, 68, 0.1) !important;
+          border: 1px solid #EF4444 !important;
+          border-radius: 12px !important;
+          padding: 20px !important;
+          margin-bottom: 24px !important;
+        }
+
+        .warning-text {
+          font-size: 16px !important;
+          color: #FCA5A5 !important;
+          margin: 0 !important;
+          font-weight: 600 !important;
+        }
+
+        .footer-text {
+          font-size: 14px !important;
+          color: #6B7280 !important;
+        }
+
+        @keyframes pulse {
+          0%, 100% { 
+            transform: scale(1);
+            opacity: 1;
+          }
+          50% { 
+            transform: scale(1.1);
+            opacity: 0.8;
+          }
+        }
+      </style>
+    `;
+  }
+
+  function generateBlockedPageHTML(endTime, wl) {
+    const timeLeft = Math.ceil((endTime - Date.now()) / 1000 / 60);
+    return `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Nuclear Mode - Site Blocked</title>
+      </head>
+      <body>
+        <div id="nuclear-block-container">
+          <div class="block-icon">🔒</div>
+          <h1 class="block-title">Nuclear Mode Active</h1>
+          <p class="block-subtitle">
+            This website is blocked. You can only access whitelisted sites during your focus session.
+          </p>
+          
+          <div class="timer-box">
+            <div class="timer-label">Time Remaining</div>
+            <div id="block-timer-value" class="timer-value">${timeLeft} min</div>
+          </div>
+
+          <div class="whitelist-box">
+            <div class="whitelist-title">✓ Whitelisted Sites</div>
+            ${wl.map(site => `<div class="whitelist-item">• ${site}</div>`).join('')}
+          </div>
+
+          <div class="warning-box">
+            <p class="warning-text">⚠️ Timer cannot be stopped. Stay focused!</p>
+          </div>
+
+          <p class="footer-text">
+            Navigate to a whitelisted site to continue working.
+          </p>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  // ============================================
+  // PANEL INITIALIZATION (Your existing UI - unchanged)
+  // ============================================
+  
+  function initializePanel() {
+    // Check if extension context is valid
+    function checkContext() {
     try {
       if (!browserAPI.runtime?.id) {
         isContextValid = false;
@@ -3722,7 +4327,7 @@ function initPassiveWatching() {
     });
   }
 
-  // Load saved settings
+  // Load saved settings (for panel updates)
   safeStorageGet(['nuclearMode']).then((result) => {
     if (!checkContext()) return;
     
@@ -3731,6 +4336,8 @@ function initPassiveWatching() {
       timerEndTime = result.nuclearMode.timerEndTime || null;
       isActive = result.nuclearMode.isActive || false;
       
+      console.log('Loaded from storage - isActive:', isActive, 'timerEndTime:', timerEndTime, 'whitelist:', whitelist);
+      
       if (isActive && timerEndTime) {
         // Check if timer expired
         if (Date.now() > timerEndTime) {
@@ -3738,6 +4345,7 @@ function initPassiveWatching() {
           return;
         }
         
+        // Block immediately if needed
         checkAndBlockSite();
         
         // Show floating timer on ALL tabs (whitelisted or not)
@@ -3769,7 +4377,11 @@ function initPassiveWatching() {
         if (!timerInterval) {
           startTimer();
         }
-      } else {
+      } else if (isActive === false && message.data.timerEndTime) {
+        // Timer was set but not activated yet - just update the values
+        console.log('Timer updated but not activated yet');
+      } else if (!isActive) {
+        // Nuclear mode was deactivated
         deactivateNuclearMode();
       }
     }
@@ -3809,29 +4421,284 @@ function initPassiveWatching() {
 
   // Check if current site is blocked
   function checkAndBlockSite() {
+    console.log('=== checkAndBlockSite called ===');
+    console.log('isActive:', isActive);
+    console.log('timerEndTime:', timerEndTime);
+    
     if (!checkContext()) return;
-    if (!isActive || !timerEndTime) return;
+    if (!isActive || !timerEndTime) {
+      console.log('Not active or no timer, skipping block check');
+      return;
+    }
     
     const now = Date.now();
     if (now > timerEndTime) {
       // Timer expired
+      console.log('Timer expired, deactivating');
       deactivateNuclearMode();
       return;
     }
 
     const currentDomain = window.location.hostname;
+    console.log('Current domain:', currentDomain);
+    console.log('Whitelist:', JSON.stringify(whitelist));
+    
     const isWhitelisted = whitelist.some(site => {
       const cleanSite = site.replace(/^https?:\/\//, '').replace(/^www\./, '');
       const cleanCurrent = currentDomain.replace(/^www\./, '');
-      return cleanCurrent.includes(cleanSite) || cleanSite.includes(cleanCurrent);
+      const matches = cleanCurrent.includes(cleanSite) || cleanSite.includes(cleanCurrent);
+      console.log(`Checking ${cleanSite} against ${cleanCurrent}: ${matches}`);
+      return matches;
     });
 
+    console.log('Is whitelisted:', isWhitelisted);
+
     if (!isWhitelisted) {
-      showBlockedPage();
+      console.log('BLOCKING SITE!');
+      blockSiteCompletely();
+    } else {
+      console.log('Site is whitelisted, allowing access');
     }
 
     // Add warning before closing browser/tab
     enableCloseWarning();
+  }
+
+  // Completely block the site (inspired by reference site blocker)
+  function blockSiteCompletely() {
+    if (!checkContext()) return;
+    
+    console.log('blockSiteCompletely called - clearing page');
+    
+    // Stop page loading
+    try {
+      window.stop();
+    } catch (e) {
+      console.log('Could not stop page loading:', e);
+    }
+    
+    // Remove all content from HTML
+    const html = document.querySelector("html");
+    if (!html) {
+      console.error('HTML element not found!');
+      return;
+    }
+    
+    html.innerHTML = "";
+    
+    // Add custom CSS
+    const style = document.createElement("style");
+    style.innerHTML = `
+      @import url("https://fonts.googleapis.com/css?family=Aboreto");
+      @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css");
+
+      * {
+        user-select: none !important;
+        pointer-events: none !important;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        background: linear-gradient(135deg, #1F2937 0%, #111827 100%) !important;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+
+      #nuclear-block-container {
+        display: block !important;
+        color: #fff;
+        text-align: center;
+        max-width: 600px;
+        padding: 40px;
+        z-index: 999999999999;
+        pointer-events: auto !important;
+      }
+
+      .block-icon {
+        font-size: 96px;
+        margin-bottom: 32px;
+        animation: pulse 2s infinite;
+      }
+
+      .block-title {
+        font-size: 48px;
+        font-weight: 700;
+        color: #F9FAFB;
+        margin: 0 0 24px 0;
+      }
+
+      .block-subtitle {
+        font-size: 20px;
+        color: #9CA3AF;
+        margin-bottom: 40px;
+        line-height: 1.6;
+      }
+
+      .timer-box {
+        background: rgba(239, 68, 68, 0.1);
+        border: 2px solid #EF4444;
+        padding: 32px;
+        border-radius: 20px;
+        margin-bottom: 32px;
+      }
+
+      .timer-label {
+        font-size: 14px;
+        color: #FCA5A5;
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-weight: 700;
+      }
+
+      .timer-value {
+        font-size: 72px;
+        font-weight: 700;
+        color: #EF4444;
+        font-family: 'Courier New', monospace;
+      }
+
+      .whitelist-box {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid #374151;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+
+      .whitelist-title {
+        font-size: 16px;
+        color: #D1D5DB;
+        margin-bottom: 16px;
+        font-weight: 600;
+      }
+
+      .whitelist-item {
+        font-size: 15px;
+        color: #9CA3AF;
+        line-height: 2;
+        padding: 8px 0;
+      }
+
+      .warning-box {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid #EF4444;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+      }
+
+      .warning-text {
+        font-size: 16px;
+        color: #FCA5A5;
+        margin: 0;
+        font-weight: 600;
+      }
+
+      .footer-text {
+        font-size: 14px;
+        color: #6B7280;
+      }
+
+      @keyframes pulse {
+        0%, 100% { 
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% { 
+          transform: scale(1.1);
+          opacity: 0.8;
+        }
+      }
+    `;
+    html.appendChild(style);
+
+    // Create block container
+    const timeLeft = Math.ceil((timerEndTime - Date.now()) / 1000 / 60);
+    const container = document.createElement("div");
+    container.id = "nuclear-block-container";
+    container.innerHTML = `
+      <div class="block-icon">🔒</div>
+      <h1 class="block-title">Nuclear Mode Active</h1>
+      <p class="block-subtitle">
+        This website is blocked. You can only access whitelisted sites during your focus session.
+      </p>
+      
+      <div class="timer-box">
+        <div class="timer-label">Time Remaining</div>
+        <div id="block-timer-value" class="timer-value">${timeLeft} min</div>
+      </div>
+
+      <div class="whitelist-box">
+        <div class="whitelist-title">✓ Whitelisted Sites</div>
+        ${whitelist.map(site => `<div class="whitelist-item">• ${site}</div>`).join('')}
+      </div>
+
+      <div class="warning-box">
+        <p class="warning-text">⚠️ Timer cannot be stopped. Stay focused!</p>
+      </div>
+
+      <p class="footer-text">
+        Navigate to a whitelisted site to continue working.
+      </p>
+    `;
+
+    html.appendChild(container);
+    
+    console.log('Block screen created and displayed');
+
+    // Update timer every second
+    const updateTimer = setInterval(() => {
+      if (!checkContext()) {
+        clearInterval(updateTimer);
+        return;
+      }
+      
+      const remaining = Math.ceil((timerEndTime - Date.now()) / 1000 / 60);
+      const timerEl = document.getElementById('block-timer-value');
+      if (timerEl) {
+        if (remaining > 0) {
+          timerEl.textContent = `${remaining} min`;
+        } else {
+          timerEl.textContent = 'Done!';
+          clearInterval(updateTimer);
+          // Reload to deactivate
+          window.location.reload();
+        }
+      }
+    }, 1000);
+
+    // Prevent all escape attempts
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }, true);
+
+    document.addEventListener('keydown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }, true);
+
+    // Prevent navigation
+    window.addEventListener('beforeunload', (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    });
   }
 
   // Prevent closing browser/tab with warning
@@ -3857,124 +4724,9 @@ function initPassiveWatching() {
     }
   }
 
-  // Show blocked page overlay
-  function showBlockedPage() {
-    if (!checkContext()) return;
-    
-    const overlay = document.createElement('div');
-    overlay.id = 'nuclear-mode-block';
-    overlay.style.cssText = `
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-      background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
-      z-index: 2147483646; display: flex; align-items: center; justify-content: center;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    `;
 
-    const timeLeft = Math.ceil((timerEndTime - Date.now()) / 1000 / 60);
-    
-    overlay.innerHTML = `
-      <div style="text-align: center; color: white; max-width: 500px; padding: 40px;">
-        <div style="font-size: 72px; margin-bottom: 24px;">🔒</div>
-        <h1 style="font-size: 36px; margin: 0 0 16px 0; font-weight: 700;">Nuclear Mode Active</h1>
-        <p style="font-size: 18px; color: #9CA3AF; margin-bottom: 32px;">
-          This website is blocked. You can only access whitelisted sites.
-        </p>
-        <div style="background: rgba(239, 68, 68, 0.1); border: 2px solid #EF4444; padding: 24px; border-radius: 16px; margin-bottom: 24px;">
-          <div style="font-size: 14px; color: #FCA5A5; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Time Remaining</div>
-          <div id="block-timer" style="font-size: 64px; font-weight: 700; color: #EF4444;">${timeLeft} min</div>
-        </div>
-        <div style="background: rgba(255,255,255,0.05); border: 1px solid #374151; border-radius: 12px; padding: 20px; margin-bottom: 16px;">
-          <div style="font-size: 14px; color: #D1D5DB; margin-bottom: 12px; font-weight: 600;">Whitelisted Sites:</div>
-          <div style="font-size: 13px; color: #9CA3AF; line-height: 1.8;">
-            ${whitelist.map(site => `<div>✓ ${site}</div>`).join('')}
-          </div>
-        </div>
-        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #EF4444; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-          <p style="font-size: 14px; color: #FCA5A5; margin: 0;">
-            ⚠️ Timer cannot be stopped. Stay focused!
-          </p>
-        </div>
-        <p style="font-size: 14px; color: #6B7280;">
-          Navigate to a whitelisted site to continue working.
-        </p>
-      </div>
-    `;
 
-    document.body.innerHTML = '';
-    document.body.appendChild(overlay);
 
-    // Prevent right-click and shortcuts
-    document.addEventListener('contextmenu', preventEscape, true);
-    document.addEventListener('keydown', preventEscapeKeys, true);
-
-    // Update timer every second
-    const updateBlockTimer = setInterval(() => {
-      if (!checkContext()) {
-        clearInterval(updateBlockTimer);
-        return;
-      }
-      
-      const remaining = Math.ceil((timerEndTime - Date.now()) / 1000 / 60);
-      const timerEl = document.getElementById('block-timer');
-      if (timerEl) {
-        if (remaining > 0) {
-          timerEl.textContent = `${remaining} min`;
-        } else {
-          timerEl.textContent = 'Done!';
-          clearInterval(updateBlockTimer);
-          deactivateNuclearMode();
-          window.location.reload();
-        }
-      }
-    }, 1000);
-  }
-
-  // Prevent escape attempts
-  function preventEscape(e) {
-    if (!checkContext()) return;
-    e.preventDefault();
-    e.stopPropagation();
-    return false;
-  }
-
-  function preventEscapeKeys(e) {
-    if (!checkContext()) return;
-    
-    // Prevent: F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+W, Ctrl+T, Alt+F4
-    if (
-      e.key === 'F12' ||
-      (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
-      (e.ctrlKey && e.key === 'u') ||
-      (e.ctrlKey && e.key === 'w') ||
-      (e.ctrlKey && e.key === 't') ||
-      (e.altKey && e.key === 'F4')
-    ) {
-      e.preventDefault();
-      e.stopPropagation();
-      showWarningNotification('Nuclear Mode is active! Stay focused!');
-      return false;
-    }
-  }
-
-  function showWarningNotification(message) {
-    if (!checkContext()) return;
-    
-    const notif = document.createElement('div');
-    notif.textContent = message;
-    notif.style.cssText = `
-      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-      background: #EF4444; color: white; padding: 16px 24px; border-radius: 8px;
-      font-size: 16px; font-weight: 600; z-index: 9999999999;
-      box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
-      animation: shake 0.5s;
-    `;
-    document.body.appendChild(notif);
-    setTimeout(() => {
-      if (notif && notif.parentNode) {
-        notif.remove();
-      }
-    }, 3000);
-  }
 
   // Create control panel
   function createPanel() {
@@ -4317,11 +5069,18 @@ function initPassiveWatching() {
   }
 
   // Set timer
-  function setTimer(minutes) {
+  async function setTimer(minutes) {
+    console.log('=== setTimer called ===');
+    console.log('Setting timer for', minutes, 'minutes');
     timerEndTime = Date.now() + (minutes * 60 * 1000);
-    saveSettings();
-    updateTimerDisplay();
-    startTimer();
+    console.log('timerEndTime set to:', timerEndTime);
+    console.log('Timer will end at:', new Date(timerEndTime).toLocaleTimeString());
+    
+    await saveSettings();
+    console.log('Settings saved after timer set');
+    
+    // Show visual feedback
+    alert(`✓ Timer set for ${minutes} minutes! Click "Activate Nuclear Mode" to start.`);
   }
 
   // Start timer countdown
@@ -4346,6 +5105,10 @@ function initPassiveWatching() {
 
   // Activate nuclear mode
   function activateNuclearMode() {
+    console.log('=== activateNuclearMode called ===');
+    console.log('Whitelist length:', whitelist.length);
+    console.log('timerEndTime:', timerEndTime);
+    
     if (whitelist.length === 0) {
       alert('⚠️ Please add at least one website to the whitelist!');
       return;
@@ -4364,6 +5127,9 @@ function initPassiveWatching() {
     
     // Create floating timer (will appear on all tabs via message)
     createFloatingTimer();
+    
+    // Start the timer countdown
+    startTimer();
     
     // Check and block current site if needed
     checkAndBlockSite();
@@ -4486,10 +5252,10 @@ function initPassiveWatching() {
     // Remove block overlay if exists
     const blockOverlay = document.getElementById('nuclear-mode-block');
     if (blockOverlay) blockOverlay.remove();
-
-    // Remove event listeners
-    document.removeEventListener('contextmenu', preventEscape, true);
-    document.removeEventListener('keydown', preventEscapeKeys, true);
+    
+    // Remove block container if exists
+    const blockContainer = document.getElementById('nuclear-block-container');
+    if (blockContainer) blockContainer.remove();
   }
 
   // Show active state
@@ -4600,8 +5366,8 @@ function initPassiveWatching() {
     if (floatingTimer && floatingTimer.parentNode) floatingTimer.remove();
     if (timerInterval) clearInterval(timerInterval);
     disableCloseWarning();
-    document.removeEventListener('contextmenu', preventEscape, true);
-    document.removeEventListener('keydown', preventEscapeKeys, true);
+    const blockContainer = document.getElementById('nuclear-block-container');
+    if (blockContainer) blockContainer.remove();
     if (style && style.parentNode) style.remove();
     isContextValid = false;
   }
@@ -4609,6 +5375,7 @@ function initPassiveWatching() {
   return {
     cleanup: cleanup
   };
+  } // End of initializePanel()
 }
 
 
@@ -5342,6 +6109,876 @@ function initYouTubeAdBlock() {
 }
 
 
+// ========== github-navigation.js ==========
+// GitHub Navigation Feature - Uses Shepherd.js for guided navigation
+let tour = null;
+let shepherdLoaded = false;
+
+// Dynamically load Shepherd.js
+async function loadShepherd() {
+  if (shepherdLoaded) return;
+  
+  try {
+    // Load Shepherd CSS
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/shepherd.js@13.0.0/dist/css/shepherd.css';
+    document.head.appendChild(link);
+    
+    // Load Shepherd JS
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/shepherd.js@13.0.0/dist/js/shepherd.min.js';
+    await new Promise((resolve, reject) => {
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+    
+    shepherdLoaded = true;
+  } catch (error) {
+    console.error('Failed to load Shepherd.js:', error);
+  }
+}
+
+function initGitHubNavigation() {
+  // Load Shepherd.js when feature is enabled
+  loadShepherd();
+  
+  // Listen for navigation requests from popup
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'checkNavigation') {
+      handleNavigation(request.query, request.answer, request.pageContent);
+    }
+  });
+
+  return {
+    cleanup: () => {
+      if (tour) {
+        tour.complete();
+        tour = null;
+      }
+    }
+  };
+}
+
+function handleNavigation(query, answer, pageContent) {
+  const lowerQuery = query.toLowerCase();
+  const lowerAnswer = answer.toLowerCase();
+  
+  try {
+    const content = JSON.parse(pageContent);
+    
+    // Extract potential folder/file names from the query
+    const words = lowerQuery.split(/\s+/);
+    
+    // Check if user is asking about a specific directory or file
+    for (const word of words) {
+      const directoryMatch = content.directoryListing.find(item => 
+        item.name.toLowerCase() === word || 
+        item.name.toLowerCase().includes(word) ||
+        word.includes(item.name.toLowerCase())
+      );
+      
+      if (directoryMatch) {
+        navigateToItem(directoryMatch);
+        return;
+      }
+    }
+    
+    // Also check in the answer
+    const answerWords = lowerAnswer.split(/\s+/);
+    for (const word of answerWords) {
+      const directoryMatch = content.directoryListing.find(item => 
+        item.name.toLowerCase() === word || 
+        item.name.toLowerCase().includes(word)
+      );
+      
+      if (directoryMatch) {
+        navigateToItem(directoryMatch);
+        return;
+      }
+    }
+    
+    // Check for common navigation patterns
+    if (lowerQuery.includes('readme')) {
+      const readmeElement = document.querySelector('#readme');
+      if (readmeElement) {
+        readmeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        highlightElement(readmeElement);
+      }
+    }
+    
+    if (lowerQuery.includes('issues')) {
+      const issuesTab = document.querySelector('[data-tab-item="issues-tab"]');
+      if (issuesTab) {
+        createTour([{
+          element: issuesTab,
+          title: 'Issues Tab',
+          text: 'Click here to view repository issues'
+        }]);
+      }
+    }
+    
+    if (lowerQuery.includes('pull request') || lowerQuery.includes('pr')) {
+      const prTab = document.querySelector('[data-tab-item="pull-requests-tab"]');
+      if (prTab) {
+        createTour([{
+          element: prTab,
+          title: 'Pull Requests',
+          text: 'Click here to view pull requests'
+        }]);
+      }
+    }
+    
+  } catch (error) {
+    console.error('Navigation error:', error);
+  }
+}
+
+function navigateToItem(item) {
+  // Find the row containing the item
+  const fileRows = document.querySelectorAll('[role="row"]');
+  let targetElement = null;
+  
+  for (const row of fileRows) {
+    const link = row.querySelector('a[href]');
+    if (link && (
+      link.getAttribute('href') === item.href || 
+      link.textContent.trim() === item.name ||
+      link.getAttribute('href').includes(item.name)
+    )) {
+      targetElement = link;
+      break;
+    }
+  }
+  
+  // Fallback: search all links
+  if (!targetElement) {
+    const links = document.querySelectorAll('a[href]');
+    for (const link of links) {
+      const linkText = link.textContent.trim();
+      const linkHref = link.getAttribute('href');
+      if (linkText === item.name || linkHref === item.href || linkHref.includes(`/${item.name}`)) {
+        targetElement = link;
+        break;
+      }
+    }
+  }
+  
+  if (targetElement) {
+    // Scroll to element first
+    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Wait a bit for scroll, then show tour
+    setTimeout(() => {
+      createTour([{
+        element: targetElement,
+        title: `Navigate to ${item.name}`,
+        text: `Click here to open the "${item.name}" folder/file`,
+        buttons: [
+          {
+            text: 'Open',
+            action: () => {
+              targetElement.click();
+              if (tour) tour.complete();
+            }
+          },
+          {
+            text: 'Cancel',
+            action: () => {
+              if (tour) tour.cancel();
+            }
+          }
+        ]
+      }]);
+    }, 300);
+  } else {
+    console.log('Could not find element for:', item);
+  }
+}
+
+function createTour(steps) {
+  if (!window.Shepherd) {
+    console.error('Shepherd.js not loaded');
+    return;
+  }
+  
+  if (tour) {
+    tour.complete();
+  }
+  
+  tour = new window.Shepherd.Tour({
+    useModalOverlay: true,
+    defaultStepOptions: {
+      classes: 'github-ai-tour',
+      scrollTo: { behavior: 'smooth', block: 'center' },
+      cancelIcon: {
+        enabled: true
+      }
+    }
+  });
+  
+  steps.forEach((step, index) => {
+    tour.addStep({
+      id: `step-${index}`,
+      attachTo: {
+        element: step.element,
+        on: 'bottom'
+      },
+      title: step.title,
+      text: step.text,
+      buttons: step.buttons || [
+        {
+          text: 'Got it',
+          action: tour.complete
+        }
+      ]
+    });
+  });
+  
+  tour.start();
+}
+
+function highlightElement(element) {
+  element.style.transition = 'all 0.3s ease';
+  element.style.boxShadow = '0 0 0 3px #1f6feb';
+  element.style.borderRadius = '6px';
+  
+  setTimeout(() => {
+    element.style.boxShadow = '';
+  }, 2000);
+}
+
+
+// ========== github-chatbot-ui.js ==========
+// GitHub Chatbot UI - Floating, collapsible, movable window
+function initGitHubChatbotUI() {
+  let chatWindow = null;
+  let isCollapsed = false;
+  let isDragging = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let windowStartX = 0;
+  let windowStartY = 0;
+  let messages = [];
+  let apiKey = null;
+
+  // Load API key
+  chrome.storage.local.get(['groqApiKey'], (result) => {
+    if (result.groqApiKey) {
+      apiKey = result.groqApiKey;
+      if (chatWindow) {
+        updateChatWindow();
+      }
+    }
+  });
+
+  function createChatWindow() {
+    if (chatWindow) return;
+
+    chatWindow = document.createElement('div');
+    chatWindow.id = 'github-ai-chatbot';
+    chatWindow.innerHTML = `
+      <div class="chat-header">
+        <div class="chat-title">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          <span>GitHub AI Assistant</span>
+        </div>
+        <div class="chat-controls">
+          <button class="chat-btn collapse-btn" title="Collapse">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM5 7.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+            </svg>
+          </button>
+          <button class="chat-btn close-btn" title="Close">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="chat-body">
+        <div class="chat-messages" id="chat-messages-container"></div>
+        <div class="chat-input-area">
+          <textarea id="chat-input" placeholder="Ask about this repository..." rows="2"></textarea>
+          <button id="chat-send-btn" class="send-btn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="chat-footer">
+        <button id="settings-btn" class="settings-btn">⚙️ Settings</button>
+      </div>
+    `;
+
+    // Add styles
+    const style = document.createElement('style');
+    style.textContent = `
+      #github-ai-chatbot {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 380px;
+        max-height: 600px;
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        z-index: 999999;
+        display: flex;
+        flex-direction: column;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        color: #c9d1d9;
+        transition: max-height 0.3s ease;
+      }
+
+      #github-ai-chatbot.collapsed {
+        max-height: 48px;
+      }
+
+      .chat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: #161b22;
+        border-bottom: 1px solid #30363d;
+        border-radius: 12px 12px 0 0;
+        cursor: move;
+        user-select: none;
+      }
+
+      .chat-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        color: #58a6ff;
+      }
+
+      .chat-controls {
+        display: flex;
+        gap: 8px;
+      }
+
+      .chat-btn {
+        background: transparent;
+        border: none;
+        color: #8b949e;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+
+      .chat-btn:hover {
+        background: #30363d;
+        color: #c9d1d9;
+      }
+
+      .chat-body {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      #github-ai-chatbot.collapsed .chat-body,
+      #github-ai-chatbot.collapsed .chat-footer {
+        display: none;
+      }
+
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 400px;
+      }
+
+      .chat-messages::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .chat-messages::-webkit-scrollbar-track {
+        background: #0d1117;
+      }
+
+      .chat-messages::-webkit-scrollbar-thumb {
+        background: #30363d;
+        border-radius: 4px;
+      }
+
+      .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: #484f58;
+      }
+
+      .message {
+        padding: 10px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        line-height: 1.5;
+        max-width: 85%;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+      }
+
+      .message.user {
+        background: #1f6feb;
+        color: white;
+        align-self: flex-end;
+        margin-left: auto;
+      }
+
+      .message.assistant {
+        background: #21262d;
+        color: #c9d1d9;
+        align-self: flex-start;
+      }
+
+      .message.error {
+        background: #da3633;
+        color: white;
+        align-self: flex-start;
+      }
+
+      .message.loading {
+        background: #21262d;
+        color: #8b949e;
+        font-style: italic;
+        align-self: flex-start;
+      }
+
+      .chat-input-area {
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px;
+        border-top: 1px solid #30363d;
+        background: #0d1117;
+      }
+
+      #chat-input {
+        flex: 1;
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        padding: 8px 12px;
+        color: #c9d1d9;
+        font-size: 13px;
+        font-family: inherit;
+        resize: none;
+        outline: none;
+      }
+
+      #chat-input:focus {
+        border-color: #58a6ff;
+      }
+
+      .send-btn {
+        background: #238636;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 12px;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+      }
+
+      .send-btn:hover {
+        background: #2ea043;
+      }
+
+      .send-btn:disabled {
+        background: #21262d;
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
+      .chat-footer {
+        padding: 8px 16px;
+        border-top: 1px solid #30363d;
+        background: #0d1117;
+        border-radius: 0 0 12px 12px;
+      }
+
+      .settings-btn {
+        background: transparent;
+        border: 1px solid #30363d;
+        color: #8b949e;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.2s;
+      }
+
+      .settings-btn:hover {
+        background: #21262d;
+        color: #c9d1d9;
+        border-color: #484f58;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #8b949e;
+      }
+
+      .empty-state svg {
+        margin-bottom: 12px;
+        opacity: 0.5;
+      }
+
+      .empty-state p {
+        font-size: 13px;
+        margin: 8px 0;
+      }
+
+      .api-key-setup {
+        padding: 20px;
+        text-align: center;
+      }
+
+      .api-key-setup h3 {
+        font-size: 14px;
+        margin-bottom: 12px;
+        color: #c9d1d9;
+      }
+
+      .api-key-setup input {
+        width: 100%;
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        padding: 8px 12px;
+        color: #c9d1d9;
+        font-size: 13px;
+        margin-bottom: 12px;
+      }
+
+      .api-key-setup button {
+        width: 100%;
+        background: #238636;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 16px;
+        color: white;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .api-key-setup button:hover {
+        background: #2ea043;
+      }
+
+      .api-key-setup .info {
+        font-size: 11px;
+        color: #8b949e;
+        margin-top: 12px;
+      }
+
+      .api-key-setup .info a {
+        color: #58a6ff;
+        text-decoration: none;
+      }
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(chatWindow);
+
+    // Initialize UI
+    updateChatWindow();
+    attachEventListeners();
+  }
+
+  function updateChatWindow() {
+    const messagesContainer = document.getElementById('chat-messages-container');
+    if (!messagesContainer) return;
+
+    if (!apiKey) {
+      messagesContainer.innerHTML = `
+        <div class="api-key-setup">
+          <h3>Setup Groq API Key</h3>
+          <input type="password" id="api-key-input" placeholder="Enter your Groq API key" />
+          <button id="save-api-key-btn">Save API Key</button>
+          <p class="info">
+            Get your free API key from 
+            <a href="https://console.groq.com" target="_blank">console.groq.com</a>
+          </p>
+        </div>
+      `;
+      
+      const saveBtn = document.getElementById('save-api-key-btn');
+      const input = document.getElementById('api-key-input');
+      
+      saveBtn.onclick = () => {
+        const key = input.value.trim();
+        if (key) {
+          chrome.storage.local.set({ groqApiKey: key }, () => {
+            apiKey = key;
+            messages = [];
+            updateChatWindow();
+          });
+        }
+      };
+      
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+          saveBtn.click();
+        }
+      };
+    } else if (messages.length === 0) {
+      messagesContainer.innerHTML = `
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          <p>Ask me anything about this repository!</p>
+          <p style="font-size: 11px; margin-top: 4px;">I can help you understand code, find files, and navigate the repo.</p>
+        </div>
+      `;
+    } else {
+      messagesContainer.innerHTML = messages.map(msg => 
+        `<div class="message ${msg.type}">${escapeHtml(msg.text)}</div>`
+      ).join('');
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+  }
+
+  function attachEventListeners() {
+    const header = chatWindow.querySelector('.chat-header');
+    const collapseBtn = chatWindow.querySelector('.collapse-btn');
+    const closeBtn = chatWindow.querySelector('.close-btn');
+    const sendBtn = document.getElementById('chat-send-btn');
+    const input = document.getElementById('chat-input');
+    const settingsBtn = document.getElementById('settings-btn');
+
+    // Dragging
+    header.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.chat-btn')) return;
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      const rect = chatWindow.getBoundingClientRect();
+      windowStartX = rect.left;
+      windowStartY = rect.top;
+      chatWindow.style.transition = 'none';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const deltaX = e.clientX - dragStartX;
+      const deltaY = e.clientY - dragStartY;
+      chatWindow.style.left = (windowStartX + deltaX) + 'px';
+      chatWindow.style.top = (windowStartY + deltaY) + 'px';
+      chatWindow.style.right = 'auto';
+      chatWindow.style.bottom = 'auto';
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        chatWindow.style.transition = '';
+      }
+    });
+
+    // Collapse
+    collapseBtn.addEventListener('click', () => {
+      isCollapsed = !isCollapsed;
+      chatWindow.classList.toggle('collapsed', isCollapsed);
+      collapseBtn.innerHTML = isCollapsed ? 
+        `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0zm7-3.25v2.992l2.028.812a.75.75 0 0 1-.557 1.392l-2.5-1A.75.75 0 0 1 7 8.25v-3.5a.75.75 0 0 1 1.5 0z"/></svg>` :
+        `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM5 7.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/></svg>`;
+    });
+
+    // Close
+    closeBtn.addEventListener('click', () => {
+      cleanup();
+    });
+
+    // Send message
+    const sendMessage = async () => {
+      const query = input.value.trim();
+      if (!query || !apiKey) return;
+
+      input.value = '';
+      messages.push({ text: query, type: 'user' });
+      updateChatWindow();
+
+      messages.push({ text: 'Analyzing...', type: 'loading' });
+      updateChatWindow();
+      sendBtn.disabled = true;
+
+      try {
+        const pageContent = await extractGitHubContent();
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+              {
+                role: 'system',
+                content: `You are a helpful assistant analyzing GitHub repository pages. The user is viewing a GitHub page with the following content:\n\n${pageContent}\n\nAnswer questions about the repository, files, issues, or any content visible on the page. Be concise and helpful.`
+              },
+              {
+                role: 'user',
+                content: query
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 1024
+          })
+        });
+
+        messages.pop(); // Remove loading message
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const answer = data.choices[0].message.content;
+        messages.push({ text: answer, type: 'assistant' });
+        updateChatWindow();
+
+        // Send navigation command
+        chrome.runtime.sendMessage({
+          action: 'checkNavigation',
+          query: query,
+          answer: answer,
+          pageContent: pageContent
+        }).catch(() => {});
+
+      } catch (error) {
+        messages.pop(); // Remove loading message
+        messages.push({ text: `Error: ${error.message}`, type: 'error' });
+        updateChatWindow();
+      } finally {
+        sendBtn.disabled = false;
+      }
+    };
+
+    sendBtn.addEventListener('click', sendMessage);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Settings
+    settingsBtn.addEventListener('click', () => {
+      const changeKey = confirm('Do you want to change your API key?');
+      if (changeKey) {
+        apiKey = null;
+        messages = [];
+        chrome.storage.local.remove('groqApiKey');
+        updateChatWindow();
+      }
+    });
+  }
+
+  async function extractGitHubContent() {
+    const content = {
+      url: window.location.href,
+      title: document.title,
+      repoName: '',
+      currentPath: '',
+      fileContent: '',
+      directoryListing: [],
+      issueContent: '',
+      readmeContent: ''
+    };
+
+    const pathParts = window.location.pathname.split('/').filter(p => p);
+    if (pathParts.length >= 2) {
+      content.repoName = `${pathParts[0]}/${pathParts[1]}`;
+    }
+
+    if (pathParts.length > 3 && pathParts[2] === 'tree') {
+      content.currentPath = pathParts.slice(4).join('/');
+    } else if (pathParts.length > 3 && pathParts[2] === 'blob') {
+      content.currentPath = pathParts.slice(4).join('/');
+      
+      const rawUrl = window.location.pathname.replace('/blob/', '/raw/');
+      try {
+        const response = await fetch(rawUrl);
+        if (response.ok) {
+          const rawContent = await response.text();
+          content.fileContent = rawContent.substring(0, 10000);
+        }
+      } catch (error) {
+        const fileContent = document.querySelector('.blob-wrapper');
+        if (fileContent) {
+          content.fileContent = fileContent.innerText.substring(0, 5000);
+        }
+      }
+    }
+
+    const fileRows = document.querySelectorAll('[role="rowheader"] a, .js-navigation-item a');
+    fileRows.forEach(link => {
+      const text = link.textContent.trim();
+      const href = link.getAttribute('href');
+      if (text && href && !text.includes('..')) {
+        content.directoryListing.push({ name: text, href: href });
+      }
+    });
+
+    const readme = document.querySelector('#readme article, .markdown-body');
+    if (readme) {
+      content.readmeContent = readme.innerText.substring(0, 3000);
+    }
+
+    if (window.location.pathname.includes('/issues')) {
+      const issueTitle = document.querySelector('.js-issue-title');
+      const issueBody = document.querySelector('.comment-body');
+      if (issueTitle) content.issueContent += `Title: ${issueTitle.textContent.trim()}\n`;
+      if (issueBody) content.issueContent += `Body: ${issueBody.innerText.substring(0, 2000)}`;
+    }
+
+    return JSON.stringify(content, null, 2);
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function cleanup() {
+    if (chatWindow) {
+      chatWindow.remove();
+      chatWindow = null;
+    }
+  }
+
+  // Create the window
+  createChatWindow();
+
+  return {
+    cleanup: cleanup
+  };
+}
+
+
 // ========== Main Initialization ==========
 let activeFeatures = {};
 let currentToggles = {};
@@ -5376,6 +7013,14 @@ function handleFeatureToggle(key, value) {
         break;
       case 'speedImprover':
         activeFeatures[key] = initSpeedImprover();
+        break;
+      case 'githubAgent':
+        if (window.location.hostname.includes('github.com')) {
+          activeFeatures[key] = {
+            chatbot: initGitHubChatbotUI(),
+            navigation: initGitHubNavigation()
+          };
+        }
         break;
     }
   } else if (!value && activeFeatures[key]) {
