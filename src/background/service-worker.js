@@ -14,7 +14,7 @@ const DETECTION_INTERVAL = 2000;
 // Initialize on install/startup
 chrome.runtime.onInstalled.addListener(async () => {
   console.log('Extension installed/updated');
-  
+
   // Load saved toggle states and apply them
   const result = await chrome.storage.sync.get(['toggles']);
   if (result.toggles && result.toggles.adBlocker) {
@@ -25,7 +25,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 // Also check on startup
 chrome.runtime.onStartup.addListener(async () => {
   console.log('Browser started');
-  
+
   // Load saved toggle states and apply them
   const result = await chrome.storage.sync.get(['toggles']);
   if (result.toggles && result.toggles.adBlocker) {
@@ -42,19 +42,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ success: true, isDetecting: true });
     return true;
   }
-  
+
   if (message.action === 'stopDetection') {
     console.log('Background: Received stopDetection');
     stopDetection();
     sendResponse({ success: true, isDetecting: false });
     return true;
   }
-  
+
   if (message.action === 'getStatus') {
     sendResponse({ isDetecting });
     return true;
   }
-  
+
   if (message.action === 'captureFrame') {
     // Forward to offscreen document
     chrome.runtime.sendMessage(message).then(sendResponse);
@@ -66,7 +66,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     handleToggleChange(message.key, message.value);
     sendResponse({ success: true });
   }
-  
+
   if (message.type === 'CLEAR_CACHE') {
     clearCache().then(() => {
       sendResponse({ success: true });
@@ -90,7 +90,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           chrome.tabs.sendMessage(tab.id, {
             type: 'NUCLEAR_MODE_UPDATED',
             data: message.data
-          }).catch(() => {});
+          }).catch(() => { });
         });
       });
       sendResponse({ success: true });
@@ -135,7 +135,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const url = message.url;
     const name = message.name;
     const domain = message.domain;
-    
+
     chrome.cookies.remove({ url, name }, () => {
       if (chrome.runtime.lastError) {
         sendResponse({ success: false, error: chrome.runtime.lastError.message });
@@ -166,12 +166,36 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
     return true;
   }
+
+  // Handle Nuclear Mode updates from content scripts
+  if (message.type === 'NUCLEAR_MODE_UPDATE') {
+    console.log('☢️ Service Worker: Received NUCLEAR_MODE_UPDATE', message.data);
+
+    // Broadcast to ALL tabs
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach(tab => {
+        // Skip restricted urls/chrome:// urls
+        if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('edge://')) return;
+
+        chrome.tabs.sendMessage(tab.id, {
+          type: 'NUCLEAR_MODE_UPDATED',
+          data: message.data
+        }).catch(err => {
+          // Ignore errors for tabs that don't have the content script
+          // console.log(`Could not send update to tab ${tab.id}:`, err);
+        });
+      });
+    });
+
+    sendResponse({ success: true });
+    return true;
+  }
 });
 
 // Handle toggle state changes
 async function handleToggleChange(key, value) {
   console.log(`Toggle changed: ${key} = ${value}`);
-  
+
   // Ad Blocker toggle
   if (key === 'adBlocker') {
     await handleAdBlocker(value);
@@ -221,10 +245,10 @@ console.log('Background service worker loaded');
 // ============================================
 async function startDetection() {
   if (isDetecting) return;
-  
+
   console.log('Starting detection...');
   isDetecting = true;
-  
+
   // Create offscreen document for camera
   try {
     await chrome.offscreen.createDocument({
@@ -237,10 +261,10 @@ async function startDetection() {
       console.error('Error creating offscreen document:', error);
     }
   }
-  
+
   // Wait for camera to initialize
   await new Promise(resolve => setTimeout(resolve, 1000));
-  
+
   // Start detection loop
   detectionInterval = setInterval(async () => {
     try {
@@ -252,21 +276,21 @@ async function startDetection() {
       console.error('Detection loop error:', error);
     }
   }, DETECTION_INTERVAL);
-  
+
   console.log('Focus detection started in background');
 }
 
 function stopDetection() {
   console.log('Stopping detection...');
   isDetecting = false;
-  
+
   if (detectionInterval) {
     clearInterval(detectionInterval);
     detectionInterval = null;
   }
-  
-  chrome.offscreen.closeDocument().catch(() => {});
-  
+
+  chrome.offscreen.closeDocument().catch(() => { });
+
   console.log('Focus detection stopped');
 }
 
@@ -279,10 +303,10 @@ async function detectMobilePhone(imageBase64) {
       },
       body: imageBase64
     });
-    
+
     const data = await response.json();
     console.log('API Response:', data);
-    
+
     if (data.predictions && data.predictions.length > 0) {
       // Show alert on active tab
       try {
@@ -298,7 +322,7 @@ async function detectMobilePhone(imageBase64) {
       } catch (error) {
         console.error('Error showing alert:', error);
       }
-      
+
       // Show notification
       chrome.notifications.create({
         type: 'basic',
@@ -306,29 +330,69 @@ async function detectMobilePhone(imageBase64) {
         title: 'Focus Alert!',
         message: `${data.predictions.length} mobile phone(s) detected!`
       });
-      
+
       // Notify popup if open
       chrome.runtime.sendMessage({
         action: 'detectionResult',
         predictions: data.predictions
-      }).catch(() => {});
+      }).catch(() => { });
     }
   } catch (error) {
     console.error('Detection error:', error);
   }
 }
 
+// Nuclear Mode: Periodic timer check to auto-deactivate when time expires
+setInterval(async () => {
+  const result = await chrome.storage.local.get(['nuclearMode']);
+  const nuclearMode = result.nuclearMode;
+
+  if (nuclearMode && nuclearMode.isActive && nuclearMode.timerEndTime) {
+    // Check if timer expired
+    if (Date.now() >= nuclearMode.timerEndTime) {
+      console.log('⏰ Nuclear Mode timer expired - auto-deactivating');
+
+      // Deactivate Nuclear Mode
+      await chrome.storage.local.set({
+        nuclearMode: {
+          whitelist: nuclearMode.whitelist || [],
+          timerEndTime: null,
+          isActive: false
+        }
+      });
+
+      // Turn off the toggle
+      await chrome.storage.sync.set({ passiveWatching: false });
+
+      // Notify all tabs
+      const tabs = await chrome.tabs.query({});
+      tabs.forEach(tab => {
+        chrome.tabs.sendMessage(tab.id, {
+          type: 'NUCLEAR_MODE_UPDATED',
+          data: {
+            whitelist: nuclearMode.whitelist || [],
+            timerEndTime: null,
+            isActive: false
+          }
+        }).catch(() => { });
+      });
+
+      console.log('✅ Nuclear Mode automatically deactivated');
+    }
+  }
+}, 1000); // Check every second
+
 // Nuclear Mode: Block new tabs that aren't whitelisted
 chrome.tabs.onCreated.addListener(async (tab) => {
   const result = await chrome.storage.local.get(['nuclearMode']);
   const nuclearMode = result.nuclearMode;
-  
+
   if (!nuclearMode || !nuclearMode.isActive || !nuclearMode.timerEndTime) {
     return;
   }
 
   // Check if timer expired
-  if (Date.now() > nuclearMode.timerEndTime) {
+  if (Date.now() >= nuclearMode.timerEndTime) {
     return;
   }
 
@@ -339,11 +403,11 @@ chrome.tabs.onCreated.addListener(async (tab) => {
       if (!updatedTab || !updatedTab.url) return;
 
       // Skip special URLs
-      if (updatedTab.url.startsWith('chrome://') || 
-          updatedTab.url.startsWith('chrome-extension://') ||
-          updatedTab.url.startsWith('about:') ||
-          updatedTab.url.startsWith('data:') ||
-          updatedTab.url === 'about:blank') {
+      if (updatedTab.url.startsWith('chrome://') ||
+        updatedTab.url.startsWith('chrome-extension://') ||
+        updatedTab.url.startsWith('about:') ||
+        updatedTab.url.startsWith('data:') ||
+        updatedTab.url === 'about:blank') {
         return;
       }
 
@@ -358,7 +422,7 @@ chrome.tabs.onCreated.addListener(async (tab) => {
 
       // Close tab if not whitelisted
       if (!isWhitelisted) {
-        chrome.tabs.remove(tab.id).catch(() => {});
+        chrome.tabs.remove(tab.id).catch(() => { });
       }
     } catch (error) {
       console.error('Error checking tab:', error);
@@ -372,22 +436,22 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
 
   const result = await chrome.storage.local.get(['nuclearMode']);
   const nuclearMode = result.nuclearMode;
-  
+
   if (!nuclearMode || !nuclearMode.isActive || !nuclearMode.timerEndTime) {
     return;
   }
 
   // Check if timer expired
-  if (Date.now() > nuclearMode.timerEndTime) {
+  if (Date.now() >= nuclearMode.timerEndTime) {
     return;
   }
 
   // Skip special URLs
-  if (details.url.startsWith('chrome://') || 
-      details.url.startsWith('chrome-extension://') ||
-      details.url.startsWith('about:') ||
-      details.url.startsWith('data:') ||
-      details.url === 'about:blank') {
+  if (details.url.startsWith('chrome://') ||
+    details.url.startsWith('chrome-extension://') ||
+    details.url.startsWith('about:') ||
+    details.url.startsWith('data:') ||
+    details.url === 'about:blank') {
     return;
   }
 
@@ -403,7 +467,7 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
 
     // Close tab if not whitelisted
     if (!isWhitelisted) {
-      chrome.tabs.remove(details.tabId).catch(() => {});
+      chrome.tabs.remove(details.tabId).catch(() => { });
     }
   } catch (error) {
     console.error('Error checking navigation:', error);
