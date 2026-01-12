@@ -250,6 +250,9 @@ function createBlockedPage(endTime, wl) {
 function check_if_restricted(nuclearMode) {
   console.log('🔍 Nuclear Blocker: check_if_restricted called');
   console.log('🔍 Nuclear Blocker: Nuclear Mode data:', nuclearMode);
+  console.log('🔍 Nuclear Blocker: isActive:', nuclearMode?.isActive);
+  console.log('🔍 Nuclear Blocker: timerEndTime:', nuclearMode?.timerEndTime);
+  console.log('🔍 Nuclear Blocker: Current time:', Date.now());
   
   if (!nuclearMode || !nuclearMode.isActive || !nuclearMode.timerEndTime) {
     console.log('❌ Nuclear Blocker: Nuclear Mode not active or no timer');
@@ -258,7 +261,15 @@ function check_if_restricted(nuclearMode) {
   
   // Check if timer hasn't expired
   if (Date.now() >= nuclearMode.timerEndTime) {
-    console.log('❌ Nuclear Blocker: Timer expired');
+    console.log('❌ Nuclear Blocker: Timer expired - clearing storage');
+    // Clear the nuclear mode from storage
+    browserAPI.storage.local.set({
+      nuclearMode: {
+        whitelist: nuclearMode.whitelist || [],
+        timerEndTime: null,
+        isActive: false
+      }
+    });
     return;
   }
   
@@ -278,8 +289,13 @@ function check_if_restricted(nuclearMode) {
 
 // Retrieve Nuclear Mode data from storage and block if needed
 browserAPI.storage.local.get("nuclearMode", function (data) {
-  console.log('📦 Nuclear Blocker: Storage data retrieved:', data);
+  console.log('📦 Nuclear Blocker: Storage data retrieved:', JSON.stringify(data, null, 2));
   const nuclearMode = data.nuclearMode || null;
+  
+  console.log('📦 Nuclear Blocker: nuclearMode object:', nuclearMode);
+  console.log('📦 Nuclear Blocker: isActive:', nuclearMode?.isActive);
+  console.log('📦 Nuclear Blocker: timerEndTime:', nuclearMode?.timerEndTime);
+  console.log('📦 Nuclear Blocker: Current time:', Date.now());
   
   if (nuclearMode && nuclearMode.isActive && nuclearMode.timerEndTime) {
     console.log('✅ Nuclear Blocker: Nuclear Mode is active with timer');
@@ -288,14 +304,109 @@ browserAPI.storage.local.get("nuclearMode", function (data) {
     if (Date.now() < nuclearMode.timerEndTime) {
       console.log('✅ Nuclear Blocker: Timer is still valid');
       
+      // Add STOP button on ALL pages when Nuclear Mode is active
+      createStopButton();
+      
       // Call check function (EXACT same pattern as reference)
       check_if_restricted(nuclearMode);
     } else {
       console.log('❌ Nuclear Blocker: Timer expired');
     }
   } else {
-    console.log('❌ Nuclear Blocker: Nuclear Mode not active or no data');
+    console.log('❌ Nuclear Blocker: Nuclear Mode NOT active');
+    console.log('   - nuclearMode exists:', !!nuclearMode);
+    console.log('   - isActive:', nuclearMode?.isActive);
+    console.log('   - timerEndTime:', nuclearMode?.timerEndTime);
   }
 });
+
+// Create persistent STOP button
+function createStopButton() {
+  // Check if button already exists
+  if (document.getElementById('nuclear-stop-button')) {
+    console.log('Stop button already exists');
+    return;
+  }
+  
+  const stopButton = document.createElement('button');
+  stopButton.id = 'nuclear-stop-button';
+  stopButton.innerHTML = '🛑 Stop Nuclear Mode';
+  stopButton.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 2147483647;
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    color: white;
+    border: none;
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.6);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    transition: all 0.3s;
+    pointer-events: auto !important;
+  `;
+  
+  stopButton.addEventListener('mouseenter', () => {
+    stopButton.style.transform = 'scale(1.05)';
+    stopButton.style.boxShadow = '0 12px 48px rgba(239, 68, 68, 0.8)';
+  });
+  
+  stopButton.addEventListener('mouseleave', () => {
+    stopButton.style.transform = 'scale(1)';
+    stopButton.style.boxShadow = '0 8px 32px rgba(239, 68, 68, 0.6)';
+  });
+  
+  stopButton.addEventListener('click', () => {
+    console.log('🛑 STOP BUTTON CLICKED - FORCE STOPPING NUCLEAR MODE');
+    
+    // Disable button
+    stopButton.disabled = true;
+    stopButton.innerHTML = '⏳ Stopping...';
+    stopButton.style.opacity = '0.5';
+    
+    // FORCE clear storage
+    browserAPI.storage.local.set({
+      nuclearMode: {
+        whitelist: [],
+        timerEndTime: null,
+        isActive: false
+      }
+    }, () => {
+      console.log('✅ Storage cleared!');
+      
+      // Also clear sync storage
+      browserAPI.storage.sync.set({ passiveWatching: false }, () => {
+        console.log('✅ Toggle cleared!');
+        
+        // Notify all tabs
+        browserAPI.runtime.sendMessage({
+          type: 'NUCLEAR_MODE_UPDATE',
+          data: {
+            whitelist: [],
+            timerEndTime: null,
+            isActive: false
+          }
+        });
+        
+        // Show success message
+        stopButton.innerHTML = '✅ Stopped!';
+        stopButton.style.background = '#10B981';
+        
+        // Reload after 1 second
+        setTimeout(() => {
+          console.log('🔄 Reloading page...');
+          window.location.reload();
+        }, 1000);
+      });
+    });
+  });
+  
+  document.body.appendChild(stopButton);
+  console.log('✅ Stop button created');
+}
 
 console.log('🚀 Nuclear Mode Blocker: Script execution complete');

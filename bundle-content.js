@@ -53,8 +53,11 @@ let activeFeatures = {};
 let currentToggles = {};
 
 function handleFeatureToggle(key, value) {
+  console.log('🔄 handleFeatureToggle called:', key, '=', value);
+  
   if (value && !activeFeatures[key]) {
     // Initialize feature
+    console.log('✅ Initializing feature:', key);
     switch(key) {
       case 'fontFinder':
         activeFeatures[key] = initFontFinder();
@@ -75,7 +78,9 @@ function handleFeatureToggle(key, value) {
         activeFeatures[key] = initFocusDetection();
         break;
       case 'passiveWatching':
+        console.log('🚀 NUCLEAR MODE: Initializing...');
         activeFeatures[key] = initPassiveWatching();
+        console.log('🚀 NUCLEAR MODE: Initialized');
         break;
       case 'energyScheduling':
         activeFeatures[key] = initEnergyScheduling();
@@ -94,10 +99,18 @@ function handleFeatureToggle(key, value) {
     }
   } else if (!value && activeFeatures[key]) {
     // Cleanup feature
+    console.log('❌ Cleaning up feature:', key);
+    if (key === 'passiveWatching') {
+      console.log('🛑 NUCLEAR MODE: Toggled OFF - Running cleanup...');
+    }
     if (activeFeatures[key].cleanup) {
       activeFeatures[key].cleanup();
+      console.log('✅ Cleanup completed for:', key);
     }
     delete activeFeatures[key];
+    console.log('✅ Feature removed from activeFeatures:', key);
+  } else {
+    console.log('⚠️ No action needed for:', key, '(value:', value, ', exists:', !!activeFeatures[key], ')');
   }
 }
 

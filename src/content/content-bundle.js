@@ -256,6 +256,9 @@ function createBlockedPage(endTime, wl) {
 function check_if_restricted(nuclearMode) {
   console.log('🔍 Nuclear Blocker: check_if_restricted called');
   console.log('🔍 Nuclear Blocker: Nuclear Mode data:', nuclearMode);
+  console.log('🔍 Nuclear Blocker: isActive:', nuclearMode?.isActive);
+  console.log('🔍 Nuclear Blocker: timerEndTime:', nuclearMode?.timerEndTime);
+  console.log('🔍 Nuclear Blocker: Current time:', Date.now());
   
   if (!nuclearMode || !nuclearMode.isActive || !nuclearMode.timerEndTime) {
     console.log('❌ Nuclear Blocker: Nuclear Mode not active or no timer');
@@ -264,7 +267,15 @@ function check_if_restricted(nuclearMode) {
   
   // Check if timer hasn't expired
   if (Date.now() >= nuclearMode.timerEndTime) {
-    console.log('❌ Nuclear Blocker: Timer expired');
+    console.log('❌ Nuclear Blocker: Timer expired - clearing storage');
+    // Clear the nuclear mode from storage
+    browserAPI.storage.local.set({
+      nuclearMode: {
+        whitelist: nuclearMode.whitelist || [],
+        timerEndTime: null,
+        isActive: false
+      }
+    });
     return;
   }
   
@@ -284,8 +295,13 @@ function check_if_restricted(nuclearMode) {
 
 // Retrieve Nuclear Mode data from storage and block if needed
 browserAPI.storage.local.get("nuclearMode", function (data) {
-  console.log('📦 Nuclear Blocker: Storage data retrieved:', data);
+  console.log('📦 Nuclear Blocker: Storage data retrieved:', JSON.stringify(data, null, 2));
   const nuclearMode = data.nuclearMode || null;
+  
+  console.log('📦 Nuclear Blocker: nuclearMode object:', nuclearMode);
+  console.log('📦 Nuclear Blocker: isActive:', nuclearMode?.isActive);
+  console.log('📦 Nuclear Blocker: timerEndTime:', nuclearMode?.timerEndTime);
+  console.log('📦 Nuclear Blocker: Current time:', Date.now());
   
   if (nuclearMode && nuclearMode.isActive && nuclearMode.timerEndTime) {
     console.log('✅ Nuclear Blocker: Nuclear Mode is active with timer');
@@ -294,15 +310,110 @@ browserAPI.storage.local.get("nuclearMode", function (data) {
     if (Date.now() < nuclearMode.timerEndTime) {
       console.log('✅ Nuclear Blocker: Timer is still valid');
       
+      // Add STOP button on ALL pages when Nuclear Mode is active
+      createStopButton();
+      
       // Call check function (EXACT same pattern as reference)
       check_if_restricted(nuclearMode);
     } else {
       console.log('❌ Nuclear Blocker: Timer expired');
     }
   } else {
-    console.log('❌ Nuclear Blocker: Nuclear Mode not active or no data');
+    console.log('❌ Nuclear Blocker: Nuclear Mode NOT active');
+    console.log('   - nuclearMode exists:', !!nuclearMode);
+    console.log('   - isActive:', nuclearMode?.isActive);
+    console.log('   - timerEndTime:', nuclearMode?.timerEndTime);
   }
 });
+
+// Create persistent STOP button
+function createStopButton() {
+  // Check if button already exists
+  if (document.getElementById('nuclear-stop-button')) {
+    console.log('Stop button already exists');
+    return;
+  }
+  
+  const stopButton = document.createElement('button');
+  stopButton.id = 'nuclear-stop-button';
+  stopButton.innerHTML = '🛑 Stop Nuclear Mode';
+  stopButton.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 2147483647;
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    color: white;
+    border: none;
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.6);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    transition: all 0.3s;
+    pointer-events: auto !important;
+  `;
+  
+  stopButton.addEventListener('mouseenter', () => {
+    stopButton.style.transform = 'scale(1.05)';
+    stopButton.style.boxShadow = '0 12px 48px rgba(239, 68, 68, 0.8)';
+  });
+  
+  stopButton.addEventListener('mouseleave', () => {
+    stopButton.style.transform = 'scale(1)';
+    stopButton.style.boxShadow = '0 8px 32px rgba(239, 68, 68, 0.6)';
+  });
+  
+  stopButton.addEventListener('click', () => {
+    console.log('🛑 STOP BUTTON CLICKED - FORCE STOPPING NUCLEAR MODE');
+    
+    // Disable button
+    stopButton.disabled = true;
+    stopButton.innerHTML = '⏳ Stopping...';
+    stopButton.style.opacity = '0.5';
+    
+    // FORCE clear storage
+    browserAPI.storage.local.set({
+      nuclearMode: {
+        whitelist: [],
+        timerEndTime: null,
+        isActive: false
+      }
+    }, () => {
+      console.log('✅ Storage cleared!');
+      
+      // Also clear sync storage
+      browserAPI.storage.sync.set({ passiveWatching: false }, () => {
+        console.log('✅ Toggle cleared!');
+        
+        // Notify all tabs
+        browserAPI.runtime.sendMessage({
+          type: 'NUCLEAR_MODE_UPDATE',
+          data: {
+            whitelist: [],
+            timerEndTime: null,
+            isActive: false
+          }
+        });
+        
+        // Show success message
+        stopButton.innerHTML = '✅ Stopped!';
+        stopButton.style.background = '#10B981';
+        
+        // Reload after 1 second
+        setTimeout(() => {
+          console.log('🔄 Reloading page...');
+          window.location.reload();
+        }, 1000);
+      });
+    });
+  });
+  
+  document.body.appendChild(stopButton);
+  console.log('✅ Stop button created');
+}
 
 console.log('🚀 Nuclear Mode Blocker: Script execution complete');
 
@@ -3934,6 +4045,49 @@ function initFocusDetection() {
 function initPassiveWatching() {
   const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
   
+  // Check if cleanup was just done (prevents re-initialization after toggle OFF)
+  try {
+    const cleanupDone = sessionStorage.getItem('nuclearModeCleanupDone');
+    if (cleanupDone === 'true') {
+      console.log('⚠️ Nuclear Mode: Cleanup was just done, skipping initialization');
+      sessionStorage.removeItem('nuclearModeCleanupDone');
+      return { cleanup: () => {} }; // Return empty cleanup function
+    }
+  } catch (e) {
+    console.log('⚠️ Could not check sessionStorage:', e);
+  }
+  
+  console.log('🚀 Nuclear Mode: Starting initialization...');
+  
+  // CRITICAL: Listen for toggle being turned OFF directly from sync storage
+  browserAPI.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'sync' && changes.passiveWatching) {
+      const newValue = changes.passiveWatching.newValue;
+      const oldValue = changes.passiveWatching.oldValue;
+      
+      console.log('🔄 passiveWatching changed:', oldValue, '->', newValue);
+      
+      if (oldValue === true && newValue === false) {
+        console.log('🛑 TOGGLE TURNED OFF - FORCE CLEARING STORAGE');
+        
+        // FORCE clear storage immediately
+        browserAPI.storage.local.set({
+          nuclearMode: {
+            whitelist: [],
+            timerEndTime: null,
+            isActive: false
+          }
+        }, () => {
+          console.log('✅ Storage cleared! Reloading in 500ms...');
+          sessionStorage.setItem('nuclearModeCleanupDone', 'true');
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        });
+      }
+    }
+  });
+  
   // Variables for Nuclear Mode state
   let panel = null;
   let whitelist = [];
@@ -5235,11 +5389,16 @@ function initPassiveWatching() {
 
   // Deactivate nuclear mode
   function deactivateNuclearMode() {
+    console.log('=== deactivateNuclearMode called ===');
     isActive = false;
     timerEndTime = null;
     if (timerInterval) clearInterval(timerInterval);
     disableCloseWarning();
+    
+    // Save with isActive: false to stop blocking
     saveSettings();
+    
+    console.log('Nuclear Mode deactivated - storage cleared');
     
     if (panel) {
       panel.querySelector('#activate-nuclear').style.display = 'block';
@@ -5256,6 +5415,17 @@ function initPassiveWatching() {
     // Remove block container if exists
     const blockContainer = document.getElementById('nuclear-block-container');
     if (blockContainer) blockContainer.remove();
+    
+    // Show message and reload
+    alert('Nuclear Mode deactivated! Refreshing blocked tabs...');
+    
+    // Notify all tabs to reload
+    browserAPI.runtime.sendMessage({
+      type: 'RELOAD_ALL_TABS'
+    });
+    
+    // Reload current page
+    window.location.reload();
   }
 
   // Show active state
@@ -5359,17 +5529,88 @@ function initPassiveWatching() {
   createPanel();
   console.log('Nuclear Mode panel created');
 
-  // Cleanup function
+  // Cleanup function - FORCEFULLY stop Nuclear Mode (called when toggle is turned OFF)
   function cleanup() {
-    console.log('Nuclear Mode cleanup');
-    if (panel && panel.parentNode) panel.remove();
-    if (floatingTimer && floatingTimer.parentNode) floatingTimer.remove();
-    if (timerInterval) clearInterval(timerInterval);
+    console.log('🛑🛑🛑 NUCLEAR MODE CLEANUP CALLED - TOGGLE TURNED OFF 🛑🛑🛑');
+    
+    // Set a flag in sessionStorage to prevent infinite reload loop
+    try {
+      sessionStorage.setItem('nuclearModeCleanupDone', 'true');
+      console.log('✅ Set cleanup flag in sessionStorage');
+    } catch (e) {
+      console.log('⚠️ Could not set sessionStorage flag:', e);
+    }
+    
+    // FORCE set isActive to false
+    isActive = false;
+    timerEndTime = null;
+    
+    // Clear Nuclear Mode from storage IMMEDIATELY
+    const clearData = {
+      nuclearMode: {
+        whitelist: [],
+        timerEndTime: null,
+        isActive: false
+      }
+    };
+    
+    console.log('🛑 Setting storage to:', clearData);
+    
+    browserAPI.storage.local.set(clearData, () => {
+      console.log('✅ Nuclear Mode storage CLEARED - isActive = false');
+      
+      // Verify it was cleared
+      browserAPI.storage.local.get('nuclearMode', (result) => {
+        console.log('🔍 Verification - Storage after clear:', result);
+      });
+    });
+    
+    // Clean up UI elements
+    console.log('🧹 Cleaning up UI elements...');
+    if (panel && panel.parentNode) {
+      panel.remove();
+      console.log('✅ Panel removed');
+    }
+    if (floatingTimer && floatingTimer.parentNode) {
+      floatingTimer.remove();
+      console.log('✅ Floating timer removed');
+    }
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      console.log('✅ Timer interval cleared');
+    }
     disableCloseWarning();
+    
     const blockContainer = document.getElementById('nuclear-block-container');
-    if (blockContainer) blockContainer.remove();
-    if (style && style.parentNode) style.remove();
+    if (blockContainer) {
+      blockContainer.remove();
+      console.log('✅ Block container removed');
+    }
+    if (style && style.parentNode) {
+      style.remove();
+      console.log('✅ Styles removed');
+    }
+    
     isContextValid = false;
+    
+    // Notify background to update all tabs
+    browserAPI.runtime.sendMessage({
+      type: 'NUCLEAR_MODE_UPDATE',
+      data: {
+        whitelist: [],
+        timerEndTime: null,
+        isActive: false
+      }
+    }, () => {
+      console.log('✅ Background notified of deactivation');
+    });
+    
+    // RELOAD page to unblock (with delay to ensure storage is cleared)
+    console.log('🔄 RELOADING PAGE in 500ms to unblock...');
+    setTimeout(() => {
+      console.log('🔄 RELOADING NOW!');
+      window.location.reload();
+    }, 500);
   }
 
   return {
@@ -6984,8 +7225,11 @@ let activeFeatures = {};
 let currentToggles = {};
 
 function handleFeatureToggle(key, value) {
+  console.log('🔄 handleFeatureToggle called:', key, '=', value);
+  
   if (value && !activeFeatures[key]) {
     // Initialize feature
+    console.log('✅ Initializing feature:', key);
     switch(key) {
       case 'fontFinder':
         activeFeatures[key] = initFontFinder();
@@ -7006,7 +7250,9 @@ function handleFeatureToggle(key, value) {
         activeFeatures[key] = initFocusDetection();
         break;
       case 'passiveWatching':
+        console.log('🚀 NUCLEAR MODE: Initializing...');
         activeFeatures[key] = initPassiveWatching();
+        console.log('🚀 NUCLEAR MODE: Initialized');
         break;
       case 'energyScheduling':
         activeFeatures[key] = initEnergyScheduling();
@@ -7025,10 +7271,18 @@ function handleFeatureToggle(key, value) {
     }
   } else if (!value && activeFeatures[key]) {
     // Cleanup feature
+    console.log('❌ Cleaning up feature:', key);
+    if (key === 'passiveWatching') {
+      console.log('🛑 NUCLEAR MODE: Toggled OFF - Running cleanup...');
+    }
     if (activeFeatures[key].cleanup) {
       activeFeatures[key].cleanup();
+      console.log('✅ Cleanup completed for:', key);
     }
     delete activeFeatures[key];
+    console.log('✅ Feature removed from activeFeatures:', key);
+  } else {
+    console.log('⚠️ No action needed for:', key, '(value:', value, ', exists:', !!activeFeatures[key], ')');
   }
 }
 
