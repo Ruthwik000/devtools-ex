@@ -330,6 +330,7 @@ console.log('🚀 Nuclear Mode Blocker: Script execution complete');
 // ========== markdown-renderer.js ==========
 // Simple Markdown Renderer for Chat Messages
 // Converts markdown to HTML with proper formatting
+// Added for Learning Agent & GitHub Agent markdown support
 
 function renderMarkdown(text) {
   if (!text) return '';
@@ -6735,6 +6736,7 @@ function highlightElement(element) {
 
 // ========== github-chatbot-ui.js ==========
 // GitHub Chatbot UI - Floating, collapsible, movable window
+// Updated to support markdown rendering for formatted responses
 function initGitHubChatbotUI() {
   // Add markdown styles
   addMarkdownStyles();
@@ -7371,6 +7373,8 @@ function initGitHubChatbotUI() {
 
 // ========== learning-agent-ui.js ==========
 // Learning Agent UI - Universal page content analyzer
+// Uses Groq API to answer questions about any webpage
+// Includes markdown rendering for formatted responses
 function initLearningAgentUI() {
   // Add markdown styles
   addMarkdownStyles();
