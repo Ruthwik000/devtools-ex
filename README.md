@@ -33,6 +33,7 @@ npm run build
 - ✅ **Check SEO** - Basic SEO analysis overlay
 - ✅ **Font Finder** - Hover to see font details
 - ✅ **Color Finder** - Click to copy color values
+- ✅ **GitHub File Tree** - VS Code-like sidebar for repository navigation with material icons
 - 🔌 **GitHub Agent** - Integration hook (teammate implementation)
 - 🔌 **AWS Agent** - Integration hook (teammate implementation)
 
@@ -62,6 +63,12 @@ if (toggles.githubAgent && isGithubPage) {
   // GitHub Agent with chatbot UI and navigation
 }
 
+// GitHub File Tree Hook
+if (toggles.githubFileTree && isGithubPage) {
+  // VS Code-like sidebar showing repository structure
+  // Features: collapsible folders, material icons, file navigation
+}
+
 // AWS Agent Hook
 if (toggles.awsAgent && isAWSPage) {
   // AWS Agent will mount here
@@ -81,6 +88,18 @@ if (toggles.learningAgent) {
 - 📄 **Smart Content Extraction**: Automatically extracts page content, headings, and metadata
 - 🔑 **API Key Management**: Secure storage of Groq API key
 - 🎨 **Modern Design**: Gradient purple theme with smooth animations
+
+### GitHub File Tree Features
+- 📁 **VS Code-Style Sidebar**: Familiar file explorer interface on the left side
+- 🎨 **Material Icons**: Beautiful emoji-based icons for different file types
+- 🔄 **Collapsible Folders**: Click folders to expand/collapse their contents
+- 🗂️ **Smart Sorting**: Folders first, then files, alphabetically sorted
+- 🎯 **Quick Navigation**: Click any file to navigate directly to it
+- 🔍 **Full Repository Structure**: Shows the complete repo tree using GitHub API
+- 💫 **Smooth Animations**: Polished transitions and hover effects
+- 🌙 **Dark Theme**: Matches VS Code's dark theme aesthetic
+- ◀️ **Collapsible Sidebar**: Hide/show the sidebar with a single click
+- 🔄 **Refresh Button**: Reload the repository structure anytime
 
 ## 📁 Project Structure
 
@@ -141,6 +160,7 @@ npm run build
 - [x] Energy-Aware Scheduling (working)
 - [x] Storage UI (working)
 - [x] Learning Agent with Groq API (working)
+- [x] GitHub File Tree (working)
 - [x] Integration hooks for GitHub/AWS agents
 
 ## 🎨 Design Principles

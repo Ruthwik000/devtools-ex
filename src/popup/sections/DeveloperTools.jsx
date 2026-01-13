@@ -55,6 +55,13 @@ const DeveloperTools = ({ expanded, onToggle, toggles, onToggleChange }) => {
         onChange={(val) => onToggleChange('githubAgent', val)}
       />
 
+      <Toggle
+        label="GitHub File Tree"
+        description="VS Code-like sidebar for repository navigation"
+        enabled={toggles.githubFileTree || false}
+        onChange={(val) => onToggleChange('githubFileTree', val)}
+      />
+
       {/* GitHub Agent UI - Only show when enabled and on GitHub */}
       {toggles.githubAgent && showGitHubAgent && currentRepo && (
         <div className="mt-3 pt-3 border-t border-gray-700 space-y-3">
