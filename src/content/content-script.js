@@ -10,13 +10,10 @@ import { initSpeedImprover } from './features/speed-improver.js';
 import { initYouTubeAdBlock } from './features/youtube-adblock.js';
 import { initGitHubNavigation } from './features/github-navigation.js';
 import { initGitHubChatbotUI } from './features/github-chatbot-ui.js';
+import { initLearningAgentUI } from './features/learning-agent-ui.js';
 
 let activeFeatures = {};
 let currentToggles = {};
-
-// ALWAYS initialize passive watching to handle nuclear mode
-// (Nuclear mode should work even if the toggle is off)
-activeFeatures['passiveWatching'] = initPassiveWatching();
 
 // Load initial toggle state
 chrome.storage.sync.get(['toggles'], (result) => {
@@ -98,8 +95,8 @@ function handleFeatureToggle(feature, enabled) {
       }
       break;
     case 'learningAgent':
-      // Integration hook for Learning Agent
-      console.log('Learning Agent integration point - ready for teammate implementation');
+      // Learning Agent - Universal page content analyzer
+      activeFeatures[feature] = initLearningAgentUI();
       break;
   }
 }

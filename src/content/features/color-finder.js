@@ -1,4 +1,4 @@
-// Color Finder - ColorZilla-like eyedropper and color picker
+// Color Finder - ColorFinder eyedropper and color picker
 export function initColorFinder() {
   const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
   
@@ -303,7 +303,7 @@ export function initColorFinder() {
   // Create main menu panel
   function createPanel() {
     panel = document.createElement('div');
-    panel.id = 'colorzilla-panel';
+    panel.id = 'colorfinder-panel';
     panel.style.cssText = `
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       width: 420px; background: #FFFFFF; border-radius: 12px;
@@ -315,7 +315,7 @@ export function initColorFinder() {
     panel.innerHTML = `
       <div style="padding: 20px; border-bottom: 1px solid #E5E7EB;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h2 style="margin: 0; font-size: 18px; color: #1F2937; font-weight: 600;">ColorZilla</h2>
+          <h2 style="margin: 0; font-size: 18px; color: #1F2937; font-weight: 600;">ColorFinder</h2>
           <button id="close-panel" style="background: none; border: none; font-size: 24px; color: #6B7280; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s;">×</button>
         </div>
         
@@ -565,7 +565,7 @@ export function initColorFinder() {
     const elements = document.querySelectorAll('*');
     
     elements.forEach(el => {
-      if (el.id === 'colorzilla-panel') return;
+      if (el.id === 'colorfinder-panel') return;
       
       const style = window.getComputedStyle(el);
       const bgColor = style.backgroundColor;

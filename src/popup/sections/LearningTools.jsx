@@ -21,7 +21,7 @@ const LearningTools = ({ expanded, onToggle, toggles, onToggleChange }) => {
       
       <Toggle
         label="Learning Agent"
-        description="Integration hook"
+        description="AI assistant to answer questions about any page"
         enabled={toggles.learningAgent || false}
         onChange={(val) => onToggleChange('learningAgent', val)}
       />
