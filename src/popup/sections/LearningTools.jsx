@@ -19,9 +19,10 @@ const LearningTools = ({ expanded, onToggle, toggles, onToggleChange }) => {
         onChange={(val) => onToggleChange('speedImprover', val)}
       />
       
+      {/* Learning Agent - AI-powered page analyzer with Groq API */}
       <Toggle
         label="Learning Agent"
-        description="Integration hook"
+        description="AI assistant to answer questions about any page"
         enabled={toggles.learningAgent || false}
         onChange={(val) => onToggleChange('learningAgent', val)}
       />

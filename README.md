@@ -39,7 +39,7 @@ npm run build
 ### Learning Tools
 - ✅ **Ad Blocker** - Declarative Net Request API
 - ✅ **Speed Improver** - Defer images, lightweight UI
-- 🔌 **Learning Agent** - Integration hook (teammate implementation)
+- ✅ **Learning Agent** - AI-powered page content analyzer with Groq API
 
 ### Productivity Tools
 - ✅ **Focus Mode** - Hide distractions, dim page
@@ -54,12 +54,12 @@ npm run build
 
 ## 🔌 Integration Hooks
 
-The extension provides placeholder hooks for three agents to be implemented by teammates:
+The extension provides placeholder hooks for agents:
 
 ```javascript
 // GitHub Agent Hook
 if (toggles.githubAgent && isGithubPage) {
-  // GitHub Agent will mount here
+  // GitHub Agent with chatbot UI and navigation
 }
 
 // AWS Agent Hook
@@ -69,9 +69,18 @@ if (toggles.awsAgent && isAWSPage) {
 
 // Learning Agent Hook
 if (toggles.learningAgent) {
-  // Learning Agent will mount here
+  // Learning Agent - Universal page content analyzer
+  // Uses Groq API to answer questions about any webpage
 }
 ```
+
+### Learning Agent Features
+- 🤖 **AI-Powered Analysis**: Uses Groq's Llama 3.3 70B model
+- 🌐 **Universal Support**: Works on any webpage
+- 💬 **Floating Chat UI**: Beautiful, draggable chat interface
+- 📄 **Smart Content Extraction**: Automatically extracts page content, headings, and metadata
+- 🔑 **API Key Management**: Secure storage of Groq API key
+- 🎨 **Modern Design**: Gradient purple theme with smooth animations
 
 ## 📁 Project Structure
 
@@ -131,7 +140,8 @@ npm run build
 - [x] Passive Watching Detector (working)
 - [x] Energy-Aware Scheduling (working)
 - [x] Storage UI (working)
-- [x] Integration hooks for GitHub/AWS/Learning agents
+- [x] Learning Agent with Groq API (working)
+- [x] Integration hooks for GitHub/AWS agents
 
 ## 🎨 Design Principles
 

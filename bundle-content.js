@@ -11,6 +11,7 @@ console.log('Bundling content scripts...');
 const featuresDir = path.join(__dirname, 'src', 'content', 'features');
 const featureFiles = [
   'nuclear-mode-blocker.js', // MUST BE FIRST - blocks sites immediately
+  'markdown-renderer.js', // MUST BE EARLY - used by chat features
   'font-finder.js',
   'color-finder.js',
   'edit-cookie.js',
@@ -22,7 +23,8 @@ const featureFiles = [
   'speed-improver.js',
   'youtube-adblock.js',
   'github-navigation.js',
-  'github-chatbot-ui.js'
+  'github-chatbot-ui.js',
+  'learning-agent-ui.js'
 ];
 
 let bundledContent = `// Content Script Bundle - Auto-generated
@@ -39,6 +41,8 @@ featureFiles.forEach(file => {
     let content = fs.readFileSync(filePath, 'utf8');
     // Remove export statements
     content = content.replace(/export\s+/g, '');
+    // Remove import statements (since everything is bundled) - Added for markdown renderer support
+    content = content.replace(/import\s+.*?from\s+['"].*?['"];?\s*/g, '');
     bundledContent += `\n// ========== ${file} ==========\n`;
     bundledContent += content + '\n';
   } else {
@@ -95,6 +99,9 @@ function handleFeatureToggle(key, value) {
             navigation: initGitHubNavigation()
           };
         }
+        break;
+      case 'learningAgent':
+        activeFeatures[key] = initLearningAgentUI();
         break;
     }
   } else if (!value && activeFeatures[key]) {
