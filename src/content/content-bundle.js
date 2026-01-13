@@ -1660,10 +1660,19 @@ function initEditCookie() {
 
   // Load cookies
   function loadCookies() {
-    browserAPI.runtime.sendMessage({ type: 'GET_ALL_COOKIES', url: window.location.href }, (response) => {
+    console.log('Loading cookies for:', window.location.href);
+    browserAPI.runtime.sendMessage({ type: 'GET_COOKIES', url: window.location.href }, (response) => {
+      console.log('Cookies response:', response);
       if (response && response.cookies) {
         allCookies = response.cookies;
         filteredCookies = allCookies;
+        console.log('Loaded cookies:', allCookies.length);
+        renderCookieList();
+        updateStats();
+      } else {
+        console.error('No cookies in response');
+        allCookies = [];
+        filteredCookies = [];
         renderCookieList();
         updateStats();
       }
