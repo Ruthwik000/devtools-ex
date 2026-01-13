@@ -10,7 +10,7 @@ import { initSpeedImprover } from './features/speed-improver.js';
 import { initYouTubeAdBlock } from './features/youtube-adblock.js';
 import { initGitHubNavigation } from './features/github-navigation.js';
 import { initGitHubChatbotUI } from './features/github-chatbot-ui.js';
-import { initLearningAgentUI } from './features/learning-agent-ui.js';
+import { initLearningAgentUI } from './features/learning-agent-ui.js'; // Learning Agent with markdown support
 
 let activeFeatures = {};
 let currentToggles = {};

@@ -1,5 +1,6 @@
 // Simple Markdown Renderer for Chat Messages
 // Converts markdown to HTML with proper formatting
+// Added for Learning Agent & GitHub Agent markdown support
 
 export function renderMarkdown(text) {
   if (!text) return '';

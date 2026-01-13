@@ -1,4 +1,6 @@
 // Learning Agent UI - Universal page content analyzer
+// Uses Groq API to answer questions about any webpage
+// Includes markdown rendering for formatted responses
 import { renderMarkdown, addMarkdownStyles } from './markdown-renderer.js';
 
 export function initLearningAgentUI() {

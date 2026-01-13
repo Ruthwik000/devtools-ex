@@ -41,7 +41,7 @@ featureFiles.forEach(file => {
     let content = fs.readFileSync(filePath, 'utf8');
     // Remove export statements
     content = content.replace(/export\s+/g, '');
-    // Remove import statements (since everything is bundled)
+    // Remove import statements (since everything is bundled) - Added for markdown renderer support
     content = content.replace(/import\s+.*?from\s+['"].*?['"];?\s*/g, '');
     bundledContent += `\n// ========== ${file} ==========\n`;
     bundledContent += content + '\n';

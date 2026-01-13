@@ -1,4 +1,5 @@
 // GitHub Chatbot UI - Floating, collapsible, movable window
+// Updated to support markdown rendering for formatted responses
 import { renderMarkdown, addMarkdownStyles } from './markdown-renderer.js';
 
 export function initGitHubChatbotUI() {
