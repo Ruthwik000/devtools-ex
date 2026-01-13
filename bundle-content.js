@@ -101,14 +101,10 @@ function handleFeatureToggle(key, value) {
           };
         }
         break;
-      case 'githubFileTree':
-        if (window.location.hostname.includes('github.com')) {
-          activeFeatures[key] = initGitHubFileTree();
-        }
-        break;
       case 'learningAgent':
         activeFeatures[key] = initLearningAgentUI();
         break;
+      // Note: githubFileTree is always active on GitHub, no toggle needed
     }
   } else if (!value && activeFeatures[key]) {
     // Cleanup feature
@@ -161,6 +157,12 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 console.log('Content script loaded');
+
+// GitHub File Tree - ALWAYS active on GitHub (no toggle needed)
+if (window.location.hostname.includes('github.com')) {
+  console.log('🌲 Detected GitHub, auto-initializing File Tree...');
+  activeFeatures['githubFileTree'] = initGitHubFileTree();
+}
 `;
 
 // Write the bundled file
