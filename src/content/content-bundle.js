@@ -7425,6 +7425,11 @@ function initGitHubFileTree() {
   let fileData = null;
   let openFolders = new Set();
   let btn, sidebar, content;
+  let isDragging = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let btnStartX = 20;
+  let btnStartY = 100;
 
   const icons = {
     'js': '📜', 'jsx': '⚛️', 'ts': '📘', 'tsx': '⚛️',
@@ -7450,20 +7455,68 @@ function initGitHubFileTree() {
   function createUI() {
     btn = document.createElement('button');
     btn.innerHTML = '📁';
-    btn.style.cssText = `position:fixed;top:100px;left:20px;width:50px;height:50px;background:linear-gradient(135deg,#667eea,#764ba2);border:2px solid white;border-radius:50%;color:white;font-size:24px;cursor:pointer;z-index:999999;box-shadow:0 4px 16px rgba(102,126,234,0.6);display:flex;align-items:center;justify-content:center;`;
-    btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
-    btn.onmouseleave = () => btn.style.transform = 'scale(1)';
-    btn.onclick = toggleSidebar;
+    btn.style.cssText = `position:fixed;top:100px;left:20px;width:50px;height:50px;background:linear-gradient(135deg,#3B82F6,#2563EB);border:2px solid #1F2937;border-radius:50%;color:white;font-size:24px;cursor:grab;z-index:999999;box-shadow:0 4px 16px rgba(59,130,246,0.5);display:flex;align-items:center;justify-content:center;transition:transform 0.2s;user-select:none;`;
+    
+    btn.onmouseenter = () => {
+      if (!isDragging) btn.style.transform = 'scale(1.1)';
+    };
+    btn.onmouseleave = () => {
+      if (!isDragging) btn.style.transform = 'scale(1)';
+    };
+    
+    // Dragging functionality
+    btn.onmousedown = (e) => {
+      isDragging = true;
+      btn.style.cursor = 'grabbing';
+      btn.style.transition = 'none';
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      const rect = btn.getBoundingClientRect();
+      btnStartX = rect.left;
+      btnStartY = rect.top;
+      e.preventDefault();
+    };
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const deltaX = e.clientX - dragStartX;
+      const deltaY = e.clientY - dragStartY;
+      const newX = btnStartX + deltaX;
+      const newY = btnStartY + deltaY;
+      btn.style.left = newX + 'px';
+      btn.style.top = newY + 'px';
+    });
+    
+    document.addEventListener('mouseup', (e) => {
+      if (isDragging) {
+        isDragging = false;
+        btn.style.cursor = 'grab';
+        btn.style.transition = 'transform 0.2s';
+        
+        // Check if it was just a click (minimal movement)
+        const deltaX = Math.abs(e.clientX - dragStartX);
+        const deltaY = Math.abs(e.clientY - dragStartY);
+        if (deltaX < 5 && deltaY < 5) {
+          toggleSidebar();
+        }
+      }
+    });
 
     sidebar = document.createElement('div');
-    sidebar.style.cssText = `position:fixed;top:0;left:-300px;width:300px;height:100vh;background:#1e1e1e;color:#ccc;z-index:999998;box-shadow:2px 0 8px rgba(0,0,0,0.3);transition:left 0.3s;display:flex;flex-direction:column;font-family:-apple-system,sans-serif;`;
+    sidebar.style.cssText = `position:fixed;top:0;left:-300px;width:300px;height:100vh;background:#111827;color:#E5E7EB;z-index:999998;box-shadow:2px 0 12px rgba(0,0,0,0.5);transition:left 0.3s;display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;border-right:1px solid #374151;`;
 
     const header = document.createElement('div');
-    header.style.cssText = `padding:12px 16px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-weight:600;font-size:12px;display:flex;justify-content:space-between;align-items:center;`;
-    header.innerHTML = `<span>📁 FILE TREE</span><button id="gh-close" style="background:none;border:none;color:white;cursor:pointer;font-size:18px;">✕</button>`;
+    header.style.cssText = `padding:16px 20px;background:linear-gradient(135deg,#3B82F6,#2563EB);color:white;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.3);`;
+    header.innerHTML = `<span style="display:flex;align-items:center;gap:8px;"><span style="font-size:18px;">📁</span> FILE TREE</span><button id="gh-close" style="background:rgba(255,255,255,0.2);border:none;color:white;cursor:pointer;font-size:16px;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">✕</button>`;
 
     content = document.createElement('div');
-    content.style.cssText = `flex:1;overflow-y:auto;padding:8px 0;`;
+    content.style.cssText = `flex:1;overflow-y:auto;padding:8px 0;background:#111827;`;
+    content.innerHTML += `<style>
+      #gh-close:hover {
+        background: rgba(239,68,68,0.9) !important;
+        transform: scale(1.1);
+      }
+    </style>`;
 
     sidebar.appendChild(header);
     sidebar.appendChild(content);
@@ -7479,16 +7532,18 @@ function initGitHubFileTree() {
     isOpen = !isOpen;
     if (isOpen) {
       sidebar.style.left = '0';
-      btn.style.display = 'none';
+      const currentLeft = parseInt(btn.style.left) || 20;
+      if (currentLeft < 320) {
+        btn.style.left = '320px';
+      }
       if (!fileData) loadFiles();
     } else {
       sidebar.style.left = '-300px';
-      btn.style.display = 'flex';
     }
   }
 
   async function loadFiles() {
-    content.innerHTML = '<div style="padding:20px;text-align:center;color:#888;">Loading...</div>';
+    content.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#9CA3AF;font-size:13px;">Loading files...</div>';
     try {
       const match = window.location.href.match(/github\.com\/([^\/]+)\/([^\/]+)/);
       if (!match) throw new Error('Not a repo');
@@ -7503,7 +7558,7 @@ function initGitHubFileTree() {
       fileData = buildTree(data.tree);
       renderTree();
     } catch (err) {
-      content.innerHTML = '<div style="padding:20px;text-align:center;color:#888;">Failed to load</div>';
+      content.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#EF4444;font-size:13px;">Failed to load files</div>';
     }
   }
 
@@ -7545,14 +7600,20 @@ function initGitHubFileTree() {
         const isExpanded = openFolders.has(child.path);
         
         const item = document.createElement('div');
-        item.style.cssText = `padding:6px 8px 6px ${level*16+8}px;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:13px;`;
-        item.onmouseenter = () => item.style.background = '#2a2d2e';
-        item.onmouseleave = () => item.style.background = 'transparent';
+        item.style.cssText = `padding:8px 12px 8px ${level*16+12}px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;color:#E5E7EB;transition:all 0.2s;border-radius:6px;margin:2px 8px;`;
+        item.onmouseenter = () => {
+          item.style.background = '#1F2937';
+          item.style.transform = 'translateX(2px)';
+        };
+        item.onmouseleave = () => {
+          item.style.background = 'transparent';
+          item.style.transform = 'translateX(0)';
+        };
         
         if (isFolder) {
           const chevron = document.createElement('span');
           chevron.textContent = isExpanded ? '▼' : '▶';
-          chevron.style.cssText = 'font-size:10px;width:12px;';
+          chevron.style.cssText = 'font-size:10px;width:12px;color:#9CA3AF;';
           item.appendChild(chevron);
         } else {
           const spacer = document.createElement('span');
@@ -7562,12 +7623,12 @@ function initGitHubFileTree() {
         
         const icon = document.createElement('span');
         icon.textContent = getIcon(child.name, isFolder, isExpanded);
-        icon.style.fontSize = '16px';
+        icon.style.cssText = 'font-size:16px;flex-shrink:0;';
         item.appendChild(icon);
         
         const name = document.createElement('span');
         name.textContent = child.name;
-        name.style.flex = '1';
+        name.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
         item.appendChild(name);
         
         item.onclick = (e) => {
@@ -7584,7 +7645,9 @@ function initGitHubFileTree() {
             if (match) {
               const owner = match[1];
               const repo = match[2].split('?')[0];
-              window.location.href = `https://github.com/${owner}/${repo}/blob/main/${child.path}`;
+              const fileUrl = `https://github.com/${owner}/${repo}/blob/main/${child.path}`;
+              // Open in new tab so the file tree stays visible
+              window.open(fileUrl, '_blank');
             }
           }
         };
