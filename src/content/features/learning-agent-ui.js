@@ -40,6 +40,12 @@ export function initLearningAgentUI() {
           <span>Learning Assistant</span>
         </div>
         <div class="chat-controls">
+          <button class="chat-btn" id="learning-settings-btn" title="Settings">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
+              <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319z"/>
+            </svg>
+          </button>
           <button class="chat-btn collapse-btn" title="Collapse">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
               <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM5 7.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
@@ -63,9 +69,6 @@ export function initLearningAgentUI() {
           </button>
         </div>
       </div>
-      <div class="chat-footer">
-        <button id="learning-settings-btn" class="settings-btn">⚙️ Settings</button>
-      </div>
     `;
 
     // Add styles
@@ -75,12 +78,14 @@ export function initLearningAgentUI() {
         position: fixed;
         bottom: 20px;
         right: 20px;
-        width: 380px;
-        max-height: 600px;
-        background: #1f2937;
+        width: 420px;
+        min-width: 350px;
+        max-height: 650px;
+        min-height: 400px;
+        background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
         border: 1px solid #374151;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
         z-index: 999999;
         display: flex;
         flex-direction: column;
@@ -88,30 +93,59 @@ export function initLearningAgentUI() {
         color: #f3f4f6;
         transition: max-height 0.3s ease;
         overflow: hidden;
+        resize: both;
       }
 
       #learning-agent-chatbot.collapsed {
-        max-height: 48px;
+        width: 240px;
+        min-width: 240px;
+        max-height: 60px;
+        min-height: 60px;
+        height: 60px;
+        resize: none;
+        border-radius: 30px;
+      }
+
+      #learning-agent-chatbot.collapsed .chat-title {
+        font-size: 14px;
+      }
+
+      #learning-agent-chatbot.collapsed .chat-title span {
+        display: inline;
       }
 
       #learning-agent-chatbot .chat-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 12px 16px;
-        background: #111827;
-        border-bottom: 1px solid #374151;
+        padding: 16px 20px;
+        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        border-bottom: 1px solid rgba(59, 130, 246, 0.3);
         cursor: move;
         user-select: none;
+        border-radius: 16px 16px 0 0;
+      }
+
+      #learning-agent-chatbot.collapsed .chat-header {
+        border-radius: 30px;
+        border-bottom: none;
+        padding: 12px 16px;
       }
 
       #learning-agent-chatbot .chat-title {
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-weight: 600;
-        font-size: 14px;
-        color: #8b5cf6;
+        gap: 10px;
+        font-weight: 700;
+        font-size: 16px;
+        color: #FFFFFF;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      #learning-agent-chatbot .chat-title svg {
+        flex-shrink: 0;
       }
 
       #learning-agent-chatbot .chat-controls {
@@ -119,22 +153,43 @@ export function initLearningAgentUI() {
         gap: 8px;
       }
 
+      #learning-agent-chatbot.collapsed .chat-controls {
+        gap: 6px;
+      }
+
+      #learning-agent-chatbot.collapsed #learning-settings-btn {
+        display: none;
+      }
+
       #learning-agent-chatbot .chat-btn {
-        background: transparent;
+        background: rgba(255, 255, 255, 0.2);
         border: none;
-        color: #9ca3af;
+        color: #FFFFFF;
         cursor: pointer;
-        padding: 4px;
-        border-radius: 6px;
+        padding: 6px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.2s;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+      }
+
+      #learning-agent-chatbot.collapsed .chat-btn {
+        width: 28px;
+        height: 28px;
+        padding: 5px;
       }
 
       #learning-agent-chatbot .chat-btn:hover {
-        background: #374151;
-        color: #f3f4f6;
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+      }
+
+      #learning-agent-chatbot .close-btn:hover {
+        background: rgba(239, 68, 68, 0.9);
       }
 
       #learning-agent-chatbot .chat-body {
@@ -142,11 +197,11 @@ export function initLearningAgentUI() {
         flex-direction: column;
         flex: 1;
         overflow: hidden;
-        background: #1f2937;
+        background: #1F2937;
+        position: relative;
       }
 
-      #learning-agent-chatbot.collapsed .chat-body,
-      #learning-agent-chatbot.collapsed .chat-footer {
+      #learning-agent-chatbot.collapsed .chat-body {
         display: none;
       }
 
@@ -154,10 +209,10 @@ export function initLearningAgentUI() {
         flex: 1;
         overflow-y: auto;
         padding: 16px;
+        padding-bottom: 80px;
         display: flex;
         flex-direction: column;
         gap: 12px;
-        max-height: 400px;
       }
 
       #learning-agent-chatbot .chat-messages::-webkit-scrollbar {
@@ -199,106 +254,102 @@ export function initLearningAgentUI() {
       }
 
       #learning-agent-chatbot .message.user {
-        background: #8b5cf6;
+        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
         color: white;
         align-self: flex-end;
         margin-left: auto;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
       }
 
       #learning-agent-chatbot .message.assistant {
         background: #374151;
-        color: #f3f4f6;
+        color: #E5E7EB;
         align-self: flex-start;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
       }
 
       #learning-agent-chatbot .message.error {
-        background: #ef4444;
+        background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
         color: white;
         align-self: flex-start;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
       }
 
       #learning-agent-chatbot .message.loading {
         background: #374151;
-        color: #9ca3af;
+        color: #9CA3AF;
         font-style: italic;
         align-self: flex-start;
       }
 
       #learning-agent-chatbot .chat-input-area {
         display: flex;
-        gap: 8px;
-        padding: 12px 16px;
+        gap: 12px;
+        padding: 16px;
         border-top: 1px solid #374151;
-        background: #1f2937;
+        background: #111827;
+        align-items: flex-end;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
       }
 
       #learning-agent-chatbot #learning-chat-input {
         flex: 1;
-        background: #111827;
-        border: 1px solid #374151;
-        border-radius: 6px;
-        padding: 8px 12px;
-        color: #f3f4f6;
-        font-size: 13px;
+        background: #1F2937;
+        border: 2px solid #374151;
+        border-radius: 10px;
+        padding: 12px 16px;
+        color: #E5E7EB;
+        font-size: 14px;
         font-family: inherit;
-        resize: none;
+        resize: vertical;
         outline: none;
-        transition: border-color 0.2s;
+        transition: all 0.2s;
+        min-height: 44px;
+        max-height: 120px;
+        line-height: 1.5;
       }
 
       #learning-agent-chatbot #learning-chat-input:focus {
-        border-color: #8b5cf6;
+        border-color: #3B82F6;
+        background: #1F2937;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
       }
 
       #learning-agent-chatbot #learning-chat-input::placeholder {
-        color: #6b7280;
+        color: #6B7280;
       }
 
       #learning-agent-chatbot .send-btn {
-        background: #8b5cf6;
+        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
         border: none;
-        border-radius: 6px;
-        padding: 8px 12px;
+        border-radius: 10px;
+        padding: 12px 16px;
+        min-width: 56px;
+        height: 44px;
         color: white;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: background 0.2s;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        flex-shrink: 0;
       }
 
       #learning-agent-chatbot .send-btn:hover {
-        background: #7c3aed;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
       }
 
       #learning-agent-chatbot .send-btn:disabled {
-        background: #4b5563;
+        background: #4B5563;
         cursor: not-allowed;
-        opacity: 0.5;
-      }
-
-      #learning-agent-chatbot .chat-footer {
-        padding: 8px 16px;
-        border-top: 1px solid #374151;
-        background: #111827;
-      }
-
-      #learning-agent-chatbot .settings-btn {
-        background: transparent;
-        border: 1px solid #374151;
-        color: #9ca3af;
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-        cursor: pointer;
-        width: 100%;
-        transition: all 0.2s;
-      }
-
-      #learning-agent-chatbot .settings-btn:hover {
-        background: #374151;
-        color: #f3f4f6;
-        border-color: #4b5563;
+        opacity: 0.6;
+        transform: none;
+        box-shadow: none;
       }
 
       #learning-agent-chatbot .empty-state {

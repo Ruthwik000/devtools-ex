@@ -306,72 +306,77 @@ export function initColorFinder() {
     panel.id = 'colorfinder-panel';
     panel.style.cssText = `
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: 420px; background: #FFFFFF; border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 9999999;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      width: 450px; min-width: 400px; min-height: 500px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 16px; box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
+      z-index: 9999999; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       overflow: hidden; display: flex; flex-direction: column;
+      resize: both;
     `;
 
     panel.innerHTML = `
-      <div style="padding: 20px; border-bottom: 1px solid #E5E7EB;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h2 style="margin: 0; font-size: 18px; color: #1F2937; font-weight: 600;">ColorFinder</h2>
-          <button id="close-panel" style="background: none; border: none; font-size: 24px; color: #6B7280; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s;">×</button>
+      <div id="cf-header" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.2); cursor: move; user-select: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2 style="margin: 0; font-size: 20px; color: #FFFFFF; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">ColorFinder</h2>
+          <button id="close-panel" style="background: rgba(255,255,255,0.2); border: none; font-size: 24px; color: #FFFFFF; cursor: pointer; padding: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;">×</button>
         </div>
-        
+      </div>
+
+      <div style="padding: 24px; flex: 1; overflow-y: auto; background: rgba(255,255,255,0.95);">
         <!-- Menu Items -->
-        <div style="display: flex; flex-direction: column; gap: 2px;">
-          <button class="menu-item" data-action="pick-page" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: white; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <button class="menu-item" data-action="pick-page" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
               <path d="M7 17L17 7M17 7H7M17 7V17"/>
             </svg>
-            <span style="font-size: 15px; color: #1F2937; font-weight: 500;">Pick Color From Page</span>
+            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Pick Color From Page</span>
           </button>
 
-          <button class="menu-item" data-action="color-picker" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: white; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;">
+          <button class="menu-item" data-action="color-picker" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" fill="#FF0000"/>
-              <circle cx="12" cy="12" r="7" fill="#00FF00"/>
-              <circle cx="12" cy="12" r="4" fill="#0000FF"/>
+              <circle cx="12" cy="12" r="10" fill="#FFFFFF" opacity="0.3"/>
+              <circle cx="12" cy="12" r="6" fill="#FFFFFF"/>
             </svg>
-            <span style="font-size: 15px; color: #1F2937; font-weight: 500;">Color Picker</span>
+            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Color Picker</span>
           </button>
 
-          <button class="menu-item" data-action="history" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: white; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2">
+          <button class="menu-item" data-action="history" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
               <circle cx="12" cy="12" r="10"/>
               <polyline points="12 6 12 12 16 14"/>
             </svg>
-            <span style="font-size: 15px; color: #1F2937; font-weight: 500;">Picked Color History</span>
+            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Picked Color History</span>
           </button>
         </div>
 
-        <div style="height: 1px; background: #E5E7EB; margin: 16px 0;"></div>
+        <div style="height: 2px; background: linear-gradient(90deg, transparent, #E5E7EB, transparent); margin: 20px 0;"></div>
 
-        <div style="display: flex; flex-direction: column; gap: 2px;">
-          <button class="menu-item" data-action="analyzer" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: white; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <button class="menu-item" data-action="analyzer" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
               <circle cx="11" cy="11" r="8"/>
               <path d="M21 21l-4.35-4.35"/>
             </svg>
-            <span style="font-size: 15px; color: #1F2937; font-weight: 500;">Webpage Color Analyzer</span>
+            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Webpage Color Analyzer</span>
           </button>
 
-          <button class="menu-item" data-action="palette" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: white; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2">
+          <button class="menu-item" data-action="palette" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
               <circle cx="12" cy="12" r="10"/>
               <circle cx="12" cy="12" r="3"/>
               <path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>
             </svg>
-            <span style="font-size: 15px; color: #1F2937; font-weight: 500;">Palette Browser</span>
+            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Palette Browser</span>
           </button>
 
-          <button class="menu-item" data-action="gradient" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: white; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;">
-            <div style="width: 24px; height: 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px;"></div>
-            <span style="font-size: 15px; color: #1F2937; font-weight: 500;">CSS Gradient Generator</span>
+          <button class="menu-item" data-action="gradient" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);">
+            <div style="width: 24px; height: 24px; background: linear-gradient(135deg, #FFFFFF 0%, rgba(255,255,255,0.5) 100%); border-radius: 6px;"></div>
+            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">CSS Gradient Generator</span>
           </button>
         </div>
       </div>
+
+      <div id="resize-handle" style="position: absolute; bottom: 0; right: 0; width: 24px; height: 24px; cursor: nwse-resize; background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.3) 50%); border-radius: 0 0 16px 0;"></div>
     `;
 
     document.body.appendChild(panel);
@@ -382,25 +387,25 @@ export function initColorFinder() {
       browserAPI.storage.sync.set({ colorFinder: false });
     });
 
-    // Hover effects
+    // Hover effects for close button
     panel.querySelector('#close-panel').addEventListener('mouseenter', function() {
-      this.style.background = '#FEE2E2';
-      this.style.color = '#DC2626';
+      this.style.background = 'rgba(239, 68, 68, 0.9)';
+      this.style.transform = 'scale(1.1)';
     });
     panel.querySelector('#close-panel').addEventListener('mouseleave', function() {
-      this.style.background = 'none';
-      this.style.color = '#6B7280';
+      this.style.background = 'rgba(255,255,255,0.2)';
+      this.style.transform = 'scale(1)';
     });
 
     // Menu item hover effects and actions
     panel.querySelectorAll('.menu-item').forEach(item => {
       item.addEventListener('mouseenter', function() {
-        this.style.background = '#F3F4F6';
-        this.style.borderColor = '#3B82F6';
+        this.style.transform = 'translateY(-2px)';
+        this.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
       });
       item.addEventListener('mouseleave', function() {
-        this.style.background = 'white';
-        this.style.borderColor = '#E5E7EB';
+        this.style.transform = 'translateY(0)';
+        this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
       });
 
       item.addEventListener('click', function() {
@@ -411,6 +416,38 @@ export function initColorFinder() {
 
     // Make draggable
     makeDraggable(panel);
+    
+    // Make resizable
+    makeResizable(panel);
+  }
+
+  // Make panel resizable
+  function makeResizable(panel) {
+    const handle = panel.querySelector('#resize-handle');
+    let isResizing = false;
+    let startX, startY, startWidth, startHeight;
+
+    handle.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startWidth = panel.offsetWidth;
+      startHeight = panel.offsetHeight;
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isResizing) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      panel.style.width = Math.max(400, startWidth + dx) + 'px';
+      panel.style.height = Math.max(500, startHeight + dy) + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+      isResizing = false;
+    });
   }
 
   // Handle menu actions
@@ -658,11 +695,12 @@ export function initColorFinder() {
 
   // Make panel draggable
   function makeDraggable(element) {
+    const header = element.querySelector('#cf-header');
     let isDragging = false;
     let startX, startY, startLeft, startTop;
 
-    element.addEventListener('mousedown', function(e) {
-      if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+    header.addEventListener('mousedown', function(e) {
+      if (e.target.id === 'close-panel' || e.target.closest('#close-panel')) return;
       
       isDragging = true;
       startX = e.clientX;
@@ -671,7 +709,7 @@ export function initColorFinder() {
       startLeft = rect.left;
       startTop = rect.top;
       element.style.transform = 'none';
-      element.style.cursor = 'grabbing';
+      header.style.cursor = 'grabbing';
     });
 
     document.addEventListener('mousemove', function(e) {
@@ -685,7 +723,7 @@ export function initColorFinder() {
     document.addEventListener('mouseup', function() {
       if (isDragging) {
         isDragging = false;
-        element.style.cursor = 'default';
+        header.style.cursor = 'move';
       }
     });
   }

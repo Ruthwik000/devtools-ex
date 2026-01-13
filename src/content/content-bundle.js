@@ -330,6 +330,7 @@ console.log('🚀 Nuclear Mode Blocker: Script execution complete');
 // ========== markdown-renderer.js ==========
 // Simple Markdown Renderer for Chat Messages
 // Converts markdown to HTML with proper formatting
+// Added for Learning Agent & GitHub Agent markdown support
 
 function renderMarkdown(text) {
   if (!text) return '';
@@ -1202,72 +1203,77 @@ function initColorFinder() {
     panel.id = 'colorfinder-panel';
     panel.style.cssText = `
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: 420px; background: #FFFFFF; border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 9999999;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      width: 450px; min-width: 400px; min-height: 500px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 16px; box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
+      z-index: 9999999; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       overflow: hidden; display: flex; flex-direction: column;
+      resize: both;
     `;
 
     panel.innerHTML = `
-      <div style="padding: 20px; border-bottom: 1px solid #E5E7EB;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h2 style="margin: 0; font-size: 18px; color: #1F2937; font-weight: 600;">ColorFinder</h2>
-          <button id="close-panel" style="background: none; border: none; font-size: 24px; color: #6B7280; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s;">×</button>
+      <div id="cf-header" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.2); cursor: move; user-select: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2 style="margin: 0; font-size: 20px; color: #FFFFFF; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">ColorFinder</h2>
+          <button id="close-panel" style="background: rgba(255,255,255,0.2); border: none; font-size: 24px; color: #FFFFFF; cursor: pointer; padding: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;">×</button>
         </div>
-        
+      </div>
+
+      <div style="padding: 24px; flex: 1; overflow-y: auto; background: rgba(255,255,255,0.95);">
         <!-- Menu Items -->
-        <div style="display: flex; flex-direction: column; gap: 2px;">
-          <button class="menu-item" data-action="pick-page" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: white; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <button class="menu-item" data-action="pick-page" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
               <path d="M7 17L17 7M17 7H7M17 7V17"/>
             </svg>
-            <span style="font-size: 15px; color: #1F2937; font-weight: 500;">Pick Color From Page</span>
+            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Pick Color From Page</span>
           </button>
 
-          <button class="menu-item" data-action="color-picker" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: white; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;">
+          <button class="menu-item" data-action="color-picker" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" fill="#FF0000"/>
-              <circle cx="12" cy="12" r="7" fill="#00FF00"/>
-              <circle cx="12" cy="12" r="4" fill="#0000FF"/>
+              <circle cx="12" cy="12" r="10" fill="#FFFFFF" opacity="0.3"/>
+              <circle cx="12" cy="12" r="6" fill="#FFFFFF"/>
             </svg>
-            <span style="font-size: 15px; color: #1F2937; font-weight: 500;">Color Picker</span>
+            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Color Picker</span>
           </button>
 
-          <button class="menu-item" data-action="history" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: white; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2">
+          <button class="menu-item" data-action="history" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
               <circle cx="12" cy="12" r="10"/>
               <polyline points="12 6 12 12 16 14"/>
             </svg>
-            <span style="font-size: 15px; color: #1F2937; font-weight: 500;">Picked Color History</span>
+            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Picked Color History</span>
           </button>
         </div>
 
-        <div style="height: 1px; background: #E5E7EB; margin: 16px 0;"></div>
+        <div style="height: 2px; background: linear-gradient(90deg, transparent, #E5E7EB, transparent); margin: 20px 0;"></div>
 
-        <div style="display: flex; flex-direction: column; gap: 2px;">
-          <button class="menu-item" data-action="analyzer" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: white; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <button class="menu-item" data-action="analyzer" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
               <circle cx="11" cy="11" r="8"/>
               <path d="M21 21l-4.35-4.35"/>
             </svg>
-            <span style="font-size: 15px; color: #1F2937; font-weight: 500;">Webpage Color Analyzer</span>
+            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Webpage Color Analyzer</span>
           </button>
 
-          <button class="menu-item" data-action="palette" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: white; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2">
+          <button class="menu-item" data-action="palette" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
               <circle cx="12" cy="12" r="10"/>
               <circle cx="12" cy="12" r="3"/>
               <path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>
             </svg>
-            <span style="font-size: 15px; color: #1F2937; font-weight: 500;">Palette Browser</span>
+            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Palette Browser</span>
           </button>
 
-          <button class="menu-item" data-action="gradient" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: white; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;">
-            <div style="width: 24px; height: 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px;"></div>
-            <span style="font-size: 15px; color: #1F2937; font-weight: 500;">CSS Gradient Generator</span>
+          <button class="menu-item" data-action="gradient" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);">
+            <div style="width: 24px; height: 24px; background: linear-gradient(135deg, #FFFFFF 0%, rgba(255,255,255,0.5) 100%); border-radius: 6px;"></div>
+            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">CSS Gradient Generator</span>
           </button>
         </div>
       </div>
+
+      <div id="resize-handle" style="position: absolute; bottom: 0; right: 0; width: 24px; height: 24px; cursor: nwse-resize; background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.3) 50%); border-radius: 0 0 16px 0;"></div>
     `;
 
     document.body.appendChild(panel);
@@ -1278,25 +1284,25 @@ function initColorFinder() {
       browserAPI.storage.sync.set({ colorFinder: false });
     });
 
-    // Hover effects
+    // Hover effects for close button
     panel.querySelector('#close-panel').addEventListener('mouseenter', function() {
-      this.style.background = '#FEE2E2';
-      this.style.color = '#DC2626';
+      this.style.background = 'rgba(239, 68, 68, 0.9)';
+      this.style.transform = 'scale(1.1)';
     });
     panel.querySelector('#close-panel').addEventListener('mouseleave', function() {
-      this.style.background = 'none';
-      this.style.color = '#6B7280';
+      this.style.background = 'rgba(255,255,255,0.2)';
+      this.style.transform = 'scale(1)';
     });
 
     // Menu item hover effects and actions
     panel.querySelectorAll('.menu-item').forEach(item => {
       item.addEventListener('mouseenter', function() {
-        this.style.background = '#F3F4F6';
-        this.style.borderColor = '#3B82F6';
+        this.style.transform = 'translateY(-2px)';
+        this.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
       });
       item.addEventListener('mouseleave', function() {
-        this.style.background = 'white';
-        this.style.borderColor = '#E5E7EB';
+        this.style.transform = 'translateY(0)';
+        this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
       });
 
       item.addEventListener('click', function() {
@@ -1307,6 +1313,38 @@ function initColorFinder() {
 
     // Make draggable
     makeDraggable(panel);
+    
+    // Make resizable
+    makeResizable(panel);
+  }
+
+  // Make panel resizable
+  function makeResizable(panel) {
+    const handle = panel.querySelector('#resize-handle');
+    let isResizing = false;
+    let startX, startY, startWidth, startHeight;
+
+    handle.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startWidth = panel.offsetWidth;
+      startHeight = panel.offsetHeight;
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isResizing) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      panel.style.width = Math.max(400, startWidth + dx) + 'px';
+      panel.style.height = Math.max(500, startHeight + dy) + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+      isResizing = false;
+    });
   }
 
   // Handle menu actions
@@ -1554,11 +1592,12 @@ function initColorFinder() {
 
   // Make panel draggable
   function makeDraggable(element) {
+    const header = element.querySelector('#cf-header');
     let isDragging = false;
     let startX, startY, startLeft, startTop;
 
-    element.addEventListener('mousedown', function(e) {
-      if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+    header.addEventListener('mousedown', function(e) {
+      if (e.target.id === 'close-panel' || e.target.closest('#close-panel')) return;
       
       isDragging = true;
       startX = e.clientX;
@@ -1567,7 +1606,7 @@ function initColorFinder() {
       startLeft = rect.left;
       startTop = rect.top;
       element.style.transform = 'none';
-      element.style.cursor = 'grabbing';
+      header.style.cursor = 'grabbing';
     });
 
     document.addEventListener('mousemove', function(e) {
@@ -1581,7 +1620,7 @@ function initColorFinder() {
     document.addEventListener('mouseup', function() {
       if (isDragging) {
         isDragging = false;
-        element.style.cursor = 'default';
+        header.style.cursor = 'move';
       }
     });
   }
@@ -6735,6 +6774,7 @@ function highlightElement(element) {
 
 // ========== github-chatbot-ui.js ==========
 // GitHub Chatbot UI - Floating, collapsible, movable window
+// Updated to support markdown rendering for formatted responses
 function initGitHubChatbotUI() {
   // Add markdown styles
   addMarkdownStyles();
@@ -7371,6 +7411,8 @@ function initGitHubChatbotUI() {
 
 // ========== learning-agent-ui.js ==========
 // Learning Agent UI - Universal page content analyzer
+// Uses Groq API to answer questions about any webpage
+// Includes markdown rendering for formatted responses
 function initLearningAgentUI() {
   // Add markdown styles
   addMarkdownStyles();
@@ -7408,6 +7450,12 @@ function initLearningAgentUI() {
           <span>Learning Assistant</span>
         </div>
         <div class="chat-controls">
+          <button class="chat-btn" id="learning-settings-btn" title="Settings">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
+              <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319z"/>
+            </svg>
+          </button>
           <button class="chat-btn collapse-btn" title="Collapse">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
               <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM5 7.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
@@ -7431,9 +7479,6 @@ function initLearningAgentUI() {
           </button>
         </div>
       </div>
-      <div class="chat-footer">
-        <button id="learning-settings-btn" class="settings-btn">⚙️ Settings</button>
-      </div>
     `;
 
     // Add styles
@@ -7443,12 +7488,14 @@ function initLearningAgentUI() {
         position: fixed;
         bottom: 20px;
         right: 20px;
-        width: 380px;
-        max-height: 600px;
-        background: #1f2937;
+        width: 420px;
+        min-width: 350px;
+        max-height: 650px;
+        min-height: 400px;
+        background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
         border: 1px solid #374151;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
         z-index: 999999;
         display: flex;
         flex-direction: column;
@@ -7456,30 +7503,59 @@ function initLearningAgentUI() {
         color: #f3f4f6;
         transition: max-height 0.3s ease;
         overflow: hidden;
+        resize: both;
       }
 
       #learning-agent-chatbot.collapsed {
-        max-height: 48px;
+        width: 240px;
+        min-width: 240px;
+        max-height: 60px;
+        min-height: 60px;
+        height: 60px;
+        resize: none;
+        border-radius: 30px;
+      }
+
+      #learning-agent-chatbot.collapsed .chat-title {
+        font-size: 14px;
+      }
+
+      #learning-agent-chatbot.collapsed .chat-title span {
+        display: inline;
       }
 
       #learning-agent-chatbot .chat-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 12px 16px;
-        background: #111827;
-        border-bottom: 1px solid #374151;
+        padding: 16px 20px;
+        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        border-bottom: 1px solid rgba(59, 130, 246, 0.3);
         cursor: move;
         user-select: none;
+        border-radius: 16px 16px 0 0;
+      }
+
+      #learning-agent-chatbot.collapsed .chat-header {
+        border-radius: 30px;
+        border-bottom: none;
+        padding: 12px 16px;
       }
 
       #learning-agent-chatbot .chat-title {
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-weight: 600;
-        font-size: 14px;
-        color: #8b5cf6;
+        gap: 10px;
+        font-weight: 700;
+        font-size: 16px;
+        color: #FFFFFF;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      #learning-agent-chatbot .chat-title svg {
+        flex-shrink: 0;
       }
 
       #learning-agent-chatbot .chat-controls {
@@ -7487,22 +7563,43 @@ function initLearningAgentUI() {
         gap: 8px;
       }
 
+      #learning-agent-chatbot.collapsed .chat-controls {
+        gap: 6px;
+      }
+
+      #learning-agent-chatbot.collapsed #learning-settings-btn {
+        display: none;
+      }
+
       #learning-agent-chatbot .chat-btn {
-        background: transparent;
+        background: rgba(255, 255, 255, 0.2);
         border: none;
-        color: #9ca3af;
+        color: #FFFFFF;
         cursor: pointer;
-        padding: 4px;
-        border-radius: 6px;
+        padding: 6px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.2s;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+      }
+
+      #learning-agent-chatbot.collapsed .chat-btn {
+        width: 28px;
+        height: 28px;
+        padding: 5px;
       }
 
       #learning-agent-chatbot .chat-btn:hover {
-        background: #374151;
-        color: #f3f4f6;
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+      }
+
+      #learning-agent-chatbot .close-btn:hover {
+        background: rgba(239, 68, 68, 0.9);
       }
 
       #learning-agent-chatbot .chat-body {
@@ -7510,11 +7607,11 @@ function initLearningAgentUI() {
         flex-direction: column;
         flex: 1;
         overflow: hidden;
-        background: #1f2937;
+        background: #1F2937;
+        position: relative;
       }
 
-      #learning-agent-chatbot.collapsed .chat-body,
-      #learning-agent-chatbot.collapsed .chat-footer {
+      #learning-agent-chatbot.collapsed .chat-body {
         display: none;
       }
 
@@ -7522,10 +7619,10 @@ function initLearningAgentUI() {
         flex: 1;
         overflow-y: auto;
         padding: 16px;
+        padding-bottom: 80px;
         display: flex;
         flex-direction: column;
         gap: 12px;
-        max-height: 400px;
       }
 
       #learning-agent-chatbot .chat-messages::-webkit-scrollbar {
@@ -7567,106 +7664,102 @@ function initLearningAgentUI() {
       }
 
       #learning-agent-chatbot .message.user {
-        background: #8b5cf6;
+        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
         color: white;
         align-self: flex-end;
         margin-left: auto;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
       }
 
       #learning-agent-chatbot .message.assistant {
         background: #374151;
-        color: #f3f4f6;
+        color: #E5E7EB;
         align-self: flex-start;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
       }
 
       #learning-agent-chatbot .message.error {
-        background: #ef4444;
+        background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
         color: white;
         align-self: flex-start;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
       }
 
       #learning-agent-chatbot .message.loading {
         background: #374151;
-        color: #9ca3af;
+        color: #9CA3AF;
         font-style: italic;
         align-self: flex-start;
       }
 
       #learning-agent-chatbot .chat-input-area {
         display: flex;
-        gap: 8px;
-        padding: 12px 16px;
+        gap: 12px;
+        padding: 16px;
         border-top: 1px solid #374151;
-        background: #1f2937;
+        background: #111827;
+        align-items: flex-end;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
       }
 
       #learning-agent-chatbot #learning-chat-input {
         flex: 1;
-        background: #111827;
-        border: 1px solid #374151;
-        border-radius: 6px;
-        padding: 8px 12px;
-        color: #f3f4f6;
-        font-size: 13px;
+        background: #1F2937;
+        border: 2px solid #374151;
+        border-radius: 10px;
+        padding: 12px 16px;
+        color: #E5E7EB;
+        font-size: 14px;
         font-family: inherit;
-        resize: none;
+        resize: vertical;
         outline: none;
-        transition: border-color 0.2s;
+        transition: all 0.2s;
+        min-height: 44px;
+        max-height: 120px;
+        line-height: 1.5;
       }
 
       #learning-agent-chatbot #learning-chat-input:focus {
-        border-color: #8b5cf6;
+        border-color: #3B82F6;
+        background: #1F2937;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
       }
 
       #learning-agent-chatbot #learning-chat-input::placeholder {
-        color: #6b7280;
+        color: #6B7280;
       }
 
       #learning-agent-chatbot .send-btn {
-        background: #8b5cf6;
+        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
         border: none;
-        border-radius: 6px;
-        padding: 8px 12px;
+        border-radius: 10px;
+        padding: 12px 16px;
+        min-width: 56px;
+        height: 44px;
         color: white;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: background 0.2s;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        flex-shrink: 0;
       }
 
       #learning-agent-chatbot .send-btn:hover {
-        background: #7c3aed;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
       }
 
       #learning-agent-chatbot .send-btn:disabled {
-        background: #4b5563;
+        background: #4B5563;
         cursor: not-allowed;
-        opacity: 0.5;
-      }
-
-      #learning-agent-chatbot .chat-footer {
-        padding: 8px 16px;
-        border-top: 1px solid #374151;
-        background: #111827;
-      }
-
-      #learning-agent-chatbot .settings-btn {
-        background: transparent;
-        border: 1px solid #374151;
-        color: #9ca3af;
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-        cursor: pointer;
-        width: 100%;
-        transition: all 0.2s;
-      }
-
-      #learning-agent-chatbot .settings-btn:hover {
-        background: #374151;
-        color: #f3f4f6;
-        border-color: #4b5563;
+        opacity: 0.6;
+        transform: none;
+        box-shadow: none;
       }
 
       #learning-agent-chatbot .empty-state {
