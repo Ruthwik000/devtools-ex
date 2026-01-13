@@ -13,6 +13,7 @@ export function initGitHubFileTree() {
   let sidebar = null;
   let isCollapsed = false;
   let fileTreeData = null;
+  let openFolders = new Set(['/']); // Track open folders globally
 
   // Material Design Icons mapping for file extensions
   const fileIcons = {
@@ -387,7 +388,6 @@ export function initGitHubFileTree() {
     }
 
     container.innerHTML = '';
-    const openFolders = new Set(['/']); // Root is open by default
     
     function renderNode(node, level = 0, parentPath = '') {
       const children = Object.values(node.children || {}).sort((a, b) => {
