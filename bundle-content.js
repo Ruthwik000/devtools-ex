@@ -52,8 +52,19 @@ bundledContent += `
 let activeFeatures = {};
 let currentToggles = {};
 
+// ALWAYS initialize passive watching for nuclear mode (independent of toggle)
+console.log('🚀 NUCLEAR MODE: Auto-initializing passive watching...');
+activeFeatures['passiveWatching'] = initPassiveWatching();
+console.log('🚀 NUCLEAR MODE: Passive watching initialized');
+
 function handleFeatureToggle(key, value) {
   console.log('🔄 handleFeatureToggle called:', key, '=', value);
+  
+  // Skip passiveWatching toggle since it's always initialized
+  if (key === 'passiveWatching') {
+    console.log('⚠️ passiveWatching is always active for nuclear mode - ignoring toggle');
+    return;
+  }
   
   if (value && !activeFeatures[key]) {
     // Initialize feature
@@ -77,11 +88,6 @@ function handleFeatureToggle(key, value) {
       case 'focusDetection':
         activeFeatures[key] = initFocusDetection();
         break;
-      case 'passiveWatching':
-        console.log('🚀 NUCLEAR MODE: Initializing...');
-        activeFeatures[key] = initPassiveWatching();
-        console.log('🚀 NUCLEAR MODE: Initialized');
-        break;
       case 'energyScheduling':
         activeFeatures[key] = initEnergyScheduling();
         break;
@@ -100,9 +106,6 @@ function handleFeatureToggle(key, value) {
   } else if (!value && activeFeatures[key]) {
     // Cleanup feature
     console.log('❌ Cleaning up feature:', key);
-    if (key === 'passiveWatching') {
-      console.log('🛑 NUCLEAR MODE: Toggled OFF - Running cleanup...');
-    }
     if (activeFeatures[key].cleanup) {
       activeFeatures[key].cleanup();
       console.log('✅ Cleanup completed for:', key);

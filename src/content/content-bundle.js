@@ -4413,14 +4413,25 @@ function initPassiveWatching() {
             return;
           }
 
-          // Block immediately if needed
-          checkAndBlockSite();
+          // Check if current site is whitelisted
+          const currentDomain = window.location.hostname.replace(/^www\./, '');
+          const isWhitelisted = whitelist.some(site => {
+            const cleanSite = site.replace(/^https?:\/\//, '').replace(/^www\./, '');
+            return currentDomain.includes(cleanSite) || cleanSite.includes(currentDomain);
+          });
 
-          // Show floating timer on ALL tabs (whitelisted or not)
-          if (!floatingTimer) {
-            createFloatingTimer();
+          if (isWhitelisted) {
+            // Site is whitelisted - show floating timer
+            console.log('✅ This tab is whitelisted - showing floating timer on load');
+            if (!floatingTimer) {
+              createFloatingTimer();
+            }
+            startTimer();
+          } else {
+            // Site is NOT whitelisted - block it
+            console.log('🔒 This tab is NOT whitelisted - blocking on load');
+            checkAndBlockSite();
           }
-          startTimer();
         }
       }
     });
@@ -5238,41 +5249,58 @@ function initPassiveWatching() {
     function createFloatingTimer() {
       if (!checkContext()) return;
 
-      // Remove existing timer if any
-      if (floatingTimer && floatingTimer.parentNode) {
-        floatingTimer.remove();
+      // Wait for body to be ready
+      const createTimer = () => {
+        // Remove existing timer if any
+        if (floatingTimer && floatingTimer.parentNode) {
+          floatingTimer.remove();
+        }
+
+        floatingTimer = document.createElement('div');
+        floatingTimer.id = 'nuclear-floating-timer';
+        floatingTimer.style.cssText = `
+        position: fixed; top: 20px; right: 20px; width: 200px; min-height: 100px;
+        background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
+        border-radius: 12px; border: 2px solid #EF4444;
+        box-shadow: 0 8px 32px rgba(239, 68, 68, 0.6); z-index: 2147483647;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        color: #E5E7EB; padding: 16px; resize: both; overflow: hidden;
+        min-width: 180px; min-height: 90px;
+      `;
+
+        floatingTimer.innerHTML = `
+        <div id="timer-header" style="cursor: move; user-select: none; margin-bottom: 12px;">
+          <div style="font-size: 12px; color: #EF4444; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">🔒 NUCLEAR MODE</div>
+        </div>
+        <div style="text-align: center;">
+          <div id="floating-timer-value" style="font-size: 48px; font-weight: 700; color: #EF4444; line-height: 1;">--:--</div>
+          <div style="font-size: 11px; color: #9CA3AF; margin-top: 8px;">Time Remaining</div>
+        </div>
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #374151;">
+          <div style="font-size: 10px; color: #6B7280; text-align: center;">Cannot be stopped</div>
+        </div>
+      `;
+
+        document.body.appendChild(floatingTimer);
+        updateFloatingTimer();
+        makeFloatingTimerDraggable();
+
+        console.log('Floating timer created on:', window.location.hostname);
+      };
+
+      // Check if body is ready
+      if (document.body) {
+        createTimer();
+      } else {
+        // Wait for body to be available
+        const observer = new MutationObserver(() => {
+          if (document.body) {
+            observer.disconnect();
+            createTimer();
+          }
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
       }
-
-      floatingTimer = document.createElement('div');
-      floatingTimer.id = 'nuclear-floating-timer';
-      floatingTimer.style.cssText = `
-      position: fixed; top: 20px; right: 20px; width: 200px; min-height: 100px;
-      background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
-      border-radius: 12px; border: 2px solid #EF4444;
-      box-shadow: 0 8px 32px rgba(239, 68, 68, 0.6); z-index: 2147483647;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      color: #E5E7EB; padding: 16px; resize: both; overflow: hidden;
-      min-width: 180px; min-height: 90px;
-    `;
-
-      floatingTimer.innerHTML = `
-      <div id="timer-header" style="cursor: move; user-select: none; margin-bottom: 12px;">
-        <div style="font-size: 12px; color: #EF4444; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">🔒 NUCLEAR MODE</div>
-      </div>
-      <div style="text-align: center;">
-        <div id="floating-timer-value" style="font-size: 48px; font-weight: 700; color: #EF4444; line-height: 1;">--:--</div>
-        <div style="font-size: 11px; color: #9CA3AF; margin-top: 8px;">Time Remaining</div>
-      </div>
-      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #374151;">
-        <div style="font-size: 10px; color: #6B7280; text-align: center;">Cannot be stopped</div>
-      </div>
-    `;
-
-      document.body.appendChild(floatingTimer);
-      updateFloatingTimer();
-      makeFloatingTimerDraggable();
-
-      console.log('Floating timer created on:', window.location.hostname);
     }
 
     // Update floating timer display
@@ -7166,8 +7194,19 @@ function initGitHubChatbotUI() {
 let activeFeatures = {};
 let currentToggles = {};
 
+// ALWAYS initialize passive watching for nuclear mode (independent of toggle)
+console.log('🚀 NUCLEAR MODE: Auto-initializing passive watching...');
+activeFeatures['passiveWatching'] = initPassiveWatching();
+console.log('🚀 NUCLEAR MODE: Passive watching initialized');
+
 function handleFeatureToggle(key, value) {
   console.log('🔄 handleFeatureToggle called:', key, '=', value);
+  
+  // Skip passiveWatching toggle since it's always initialized
+  if (key === 'passiveWatching') {
+    console.log('⚠️ passiveWatching is always active for nuclear mode - ignoring toggle');
+    return;
+  }
   
   if (value && !activeFeatures[key]) {
     // Initialize feature
@@ -7191,11 +7230,6 @@ function handleFeatureToggle(key, value) {
       case 'focusDetection':
         activeFeatures[key] = initFocusDetection();
         break;
-      case 'passiveWatching':
-        console.log('🚀 NUCLEAR MODE: Initializing...');
-        activeFeatures[key] = initPassiveWatching();
-        console.log('🚀 NUCLEAR MODE: Initialized');
-        break;
       case 'energyScheduling':
         activeFeatures[key] = initEnergyScheduling();
         break;
@@ -7214,9 +7248,6 @@ function handleFeatureToggle(key, value) {
   } else if (!value && activeFeatures[key]) {
     // Cleanup feature
     console.log('❌ Cleaning up feature:', key);
-    if (key === 'passiveWatching') {
-      console.log('🛑 NUCLEAR MODE: Toggled OFF - Running cleanup...');
-    }
     if (activeFeatures[key].cleanup) {
       activeFeatures[key].cleanup();
       console.log('✅ Cleanup completed for:', key);

@@ -14,6 +14,10 @@ import { initGitHubChatbotUI } from './features/github-chatbot-ui.js';
 let activeFeatures = {};
 let currentToggles = {};
 
+// ALWAYS initialize passive watching to handle nuclear mode
+// (Nuclear mode should work even if the toggle is off)
+activeFeatures['passiveWatching'] = initPassiveWatching();
+
 // Load initial toggle state
 chrome.storage.sync.get(['toggles'], (result) => {
   if (result.toggles) {
