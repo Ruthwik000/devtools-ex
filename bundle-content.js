@@ -24,6 +24,7 @@ const featureFiles = [
   'youtube-adblock.js',
   'github-navigation.js',
   'github-chatbot-ui.js',
+  'github-filetree.js',
   'learning-agent-ui.js'
 ];
 
@@ -98,6 +99,11 @@ function handleFeatureToggle(key, value) {
             chatbot: initGitHubChatbotUI(),
             navigation: initGitHubNavigation()
           };
+        }
+        break;
+      case 'githubFileTree':
+        if (window.location.hostname.includes('github.com')) {
+          activeFeatures[key] = initGitHubFileTree();
         }
         break;
       case 'learningAgent':

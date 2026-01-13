@@ -11,6 +11,7 @@ import { initYouTubeAdBlock } from './features/youtube-adblock.js';
 import { initGitHubNavigation } from './features/github-navigation.js';
 import { initGitHubChatbotUI } from './features/github-chatbot-ui.js';
 import { initLearningAgentUI } from './features/learning-agent-ui.js'; // Learning Agent with markdown support
+import { initGitHubFileTree } from './features/github-filetree.js';
 
 let activeFeatures = {};
 let currentToggles = {};
@@ -97,6 +98,12 @@ function handleFeatureToggle(feature, enabled) {
     case 'learningAgent':
       // Learning Agent - Universal page content analyzer
       activeFeatures[feature] = initLearningAgentUI();
+      break;
+    case 'githubFileTree':
+      // GitHub File Tree - VS Code-like sidebar
+      if (window.location.hostname.includes('github.com')) {
+        activeFeatures[feature] = initGitHubFileTree();
+      }
       break;
   }
 }
