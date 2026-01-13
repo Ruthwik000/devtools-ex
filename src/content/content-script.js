@@ -16,6 +16,12 @@ import { initGitHubFileTree } from './features/github-filetree.js';
 let activeFeatures = {};
 let currentToggles = {};
 
+// GitHub File Tree - ALWAYS active on GitHub (no toggle needed)
+if (window.location.hostname.includes('github.com')) {
+  console.log('🌲 Detected GitHub, auto-initializing File Tree...');
+  activeFeatures['githubFileTree'] = initGitHubFileTree();
+}
+
 // Load initial toggle state
 chrome.storage.sync.get(['toggles'], (result) => {
   if (result.toggles) {
@@ -99,12 +105,7 @@ function handleFeatureToggle(feature, enabled) {
       // Learning Agent - Universal page content analyzer
       activeFeatures[feature] = initLearningAgentUI();
       break;
-    case 'githubFileTree':
-      // GitHub File Tree - VS Code-like sidebar
-      if (window.location.hostname.includes('github.com')) {
-        activeFeatures[feature] = initGitHubFileTree();
-      }
-      break;
+    // Note: githubFileTree is always active on GitHub, no toggle needed
   }
 }
 
