@@ -24,7 +24,6 @@ const featureFiles = [
   'youtube-adblock.js',
   'github-navigation.js',
   'github-chatbot-ui.js',
-  'github-filetree.js',
   'learning-agent-ui.js'
 ];
 
@@ -104,7 +103,6 @@ function handleFeatureToggle(key, value) {
       case 'learningAgent':
         activeFeatures[key] = initLearningAgentUI();
         break;
-      // Note: githubFileTree is always active on GitHub, no toggle needed
     }
   } else if (!value && activeFeatures[key]) {
     // Cleanup feature
@@ -124,26 +122,51 @@ function handleFeatureToggle(key, value) {
 }
 
 function initializeFeatures() {
+  console.log('Initializing features with toggles:', currentToggles);
   Object.keys(currentToggles).forEach(key => {
     if (currentToggles[key]) {
+      console.log('Initializing feature:', key);
       handleFeatureToggle(key, true);
     }
   });
 }
 
-// Load initial state
-browserAPI.storage.sync.get(null, (data) => {
-  currentToggles = data;
-  initializeFeatures();
+// Load initial state - specifically load the 'toggles' object
+browserAPI.storage.sync.get(['toggles'], (data) => {
+  console.log('Loaded storage data:', data);
+  if (data.toggles) {
+    currentToggles = data.toggles;
+    console.log('Current toggles:', currentToggles);
+    initializeFeatures();
+  } else {
+    console.log('No toggles found in storage');
+  }
 });
 
 // Listen for toggle changes
 browserAPI.storage.onChanged.addListener((changes, namespace) => {
-  if (namespace === 'sync') {
-    Object.keys(changes).forEach(key => {
-      const newValue = changes[key].newValue;
-      currentToggles[key] = newValue;
-      handleFeatureToggle(key, newValue);
+  if (namespace === 'sync' && changes.toggles) {
+    console.log('Storage changed - toggles:', changes.toggles);
+    const newToggles = changes.toggles.newValue || {};
+    const oldToggles = changes.toggles.oldValue || {};
+    
+    // Update current toggles
+    currentToggles = newToggles;
+    
+    // Handle each changed toggle
+    Object.keys(newToggles).forEach(key => {
+      if (newToggles[key] !== oldToggles[key]) {
+        console.log('Toggle changed:', key, '=', newToggles[key]);
+        handleFeatureToggle(key, newToggles[key]);
+      }
+    });
+    
+    // Handle removed toggles
+    Object.keys(oldToggles).forEach(key => {
+      if (!(key in newToggles) && oldToggles[key]) {
+        console.log('Toggle removed:', key);
+        handleFeatureToggle(key, false);
+      }
     });
   }
 });
@@ -157,12 +180,6 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 console.log('Content script loaded');
-
-// GitHub File Tree - ALWAYS active on GitHub (no toggle needed)
-if (window.location.hostname.includes('github.com')) {
-  console.log('🌲 Detected GitHub, auto-initializing File Tree...');
-  activeFeatures['githubFileTree'] = initGitHubFileTree();
-}
 `;
 
 // Write the bundled file

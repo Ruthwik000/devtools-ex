@@ -3,6 +3,7 @@
 import { renderMarkdown, addMarkdownStyles } from './markdown-renderer.js';
 
 export function initGitHubChatbotUI() {
+  console.log('🤖 Initializing GitHub Chatbot UI...');
   // Add markdown styles
   addMarkdownStyles();
   let chatWindow = null;
@@ -27,6 +28,12 @@ export function initGitHubChatbotUI() {
 
   function createChatWindow() {
     if (chatWindow) return;
+    
+    // Ensure DOM is ready
+    if (!document.body) {
+      setTimeout(createChatWindow, 100);
+      return;
+    }
 
     chatWindow = document.createElement('div');
     chatWindow.id = 'github-ai-chatbot';
@@ -465,6 +472,12 @@ export function initGitHubChatbotUI() {
     // Close
     closeBtn.addEventListener('click', () => {
       cleanup();
+      // Update the toggles object to turn off the feature
+      chrome.storage.sync.get(['toggles'], (data) => {
+        const toggles = data.toggles || {};
+        toggles.githubAgent = false;
+        chrome.storage.sync.set({ toggles });
+      });
     });
 
     // Send message
@@ -628,6 +641,7 @@ export function initGitHubChatbotUI() {
   }
 
   // Create the window
+  console.log('🤖 Creating GitHub chatbot window...');
   createChatWindow();
 
   return {

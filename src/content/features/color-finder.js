@@ -435,7 +435,12 @@ export function initColorFinder() {
     // Add event listeners
     panel.querySelector('#close-panel').addEventListener('click', () => {
       panel.remove();
-      browserAPI.storage.sync.set({ colorFinder: false });
+      // Update the toggles object to turn off the feature
+      browserAPI.storage.sync.get(['toggles'], (data) => {
+        const toggles = data.toggles || {};
+        toggles.colorFinder = false;
+        browserAPI.storage.sync.set({ toggles });
+      });
     });
 
     // Hover effects for close button
@@ -731,7 +736,12 @@ export function initColorFinder() {
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
         panel.remove();
-        browserAPI.storage.sync.set({ colorFinder: false });
+        // Update the toggles object to turn off the feature
+        browserAPI.storage.sync.get(['toggles'], (data) => {
+          const toggles = data.toggles || {};
+          toggles.colorFinder = false;
+          browserAPI.storage.sync.set({ toggles });
+        });
       });
     }
 

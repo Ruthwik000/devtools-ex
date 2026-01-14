@@ -11,36 +11,36 @@ import { initYouTubeAdBlock } from './features/youtube-adblock.js';
 import { initGitHubNavigation } from './features/github-navigation.js';
 import { initGitHubChatbotUI } from './features/github-chatbot-ui.js';
 import { initLearningAgentUI } from './features/learning-agent-ui.js'; // Learning Agent with markdown support
-import { initGitHubFileTree } from './features/github-filetree.js';
 
 let activeFeatures = {};
 let currentToggles = {};
 
-// GitHub File Tree - ALWAYS active on GitHub (no toggle needed)
-if (window.location.hostname.includes('github.com')) {
-  console.log('🌲 Detected GitHub, auto-initializing File Tree...');
-  activeFeatures['githubFileTree'] = initGitHubFileTree();
-}
-
 // Load initial toggle state
 chrome.storage.sync.get(['toggles'], (result) => {
+  console.log('Loaded storage data:', result);
   if (result.toggles) {
     currentToggles = result.toggles;
+    console.log('Current toggles:', currentToggles);
     initializeFeatures();
+  } else {
+    console.log('No toggles found in storage');
   }
 });
 
 // Listen for toggle updates
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'TOGGLE_UPDATE') {
+    console.log('Toggle update:', message.key, '=', message.value);
     currentToggles[message.key] = message.value;
     handleFeatureToggle(message.key, message.value);
   }
 });
 
 function initializeFeatures() {
+  console.log('Initializing features with toggles:', currentToggles);
   Object.keys(currentToggles).forEach(key => {
     if (currentToggles[key]) {
+      console.log('Initializing feature:', key);
       handleFeatureToggle(key, true);
     }
   });
@@ -105,7 +105,6 @@ function handleFeatureToggle(feature, enabled) {
       // Learning Agent - Universal page content analyzer
       activeFeatures[feature] = initLearningAgentUI();
       break;
-    // Note: githubFileTree is always active on GitHub, no toggle needed
   }
 }
 

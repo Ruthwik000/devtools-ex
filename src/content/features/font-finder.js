@@ -303,8 +303,12 @@ export function initFontFinder() {
       el.style.outlineOffset = '';
       el.removeAttribute('data-font-finder-highlight');
     });
-    // Turn off toggle
-    browserAPI.storage.sync.set({ fontFinder: false });
+    // Update the toggles object to turn off the feature
+    browserAPI.storage.sync.get(['toggles'], (data) => {
+      const toggles = data.toggles || {};
+      toggles.fontFinder = false;
+      browserAPI.storage.sync.set({ toggles });
+    });
   });
 
   document.getElementById('copy-all-font-btn').addEventListener('click', () => {

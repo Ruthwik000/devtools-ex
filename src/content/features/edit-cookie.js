@@ -535,8 +535,12 @@ export function initEditCookie() {
   // Close panel
   document.getElementById('close-cookie-panel').addEventListener('click', () => {
     panel.remove();
-    // Turn off toggle
-    browserAPI.storage.sync.set({ editCookie: false });
+    // Update the toggles object to turn off the feature
+    browserAPI.storage.sync.get(['toggles'], (data) => {
+      const toggles = data.toggles || {};
+      toggles.editCookie = false;
+      browserAPI.storage.sync.set({ toggles });
+    });
   });
 
   // Hover effect for close button

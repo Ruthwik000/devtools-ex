@@ -546,6 +546,12 @@ export function initLearningAgentUI() {
     // Close
     closeBtn.addEventListener('click', () => {
       cleanup();
+      // Update the toggles object to turn off the feature
+      chrome.storage.sync.get(['toggles'], (data) => {
+        const toggles = data.toggles || {};
+        toggles.learningAgent = false;
+        chrome.storage.sync.set({ toggles });
+      });
     });
 
     // Send message
