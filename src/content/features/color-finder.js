@@ -107,28 +107,85 @@ export function initColorFinder() {
   // Get pixel color from screen
   async function getPixelColor(x, y) {
     try {
-      // Capture screenshot of area around cursor
-      const captureArea = {
-        x: Math.max(0, x - 70),
-        y: Math.max(0, y - 70),
-        width: 140,
-        height: 140
-      };
+      // Try modern EyeDropper API first (captures actual rendered pixels)
+      if (window.EyeDropper) {
+        try {
+          const eyeDropper = new EyeDropper();
+          const result = await eyeDropper.open();
+          
+          // Parse the hex color to RGB
+          const hex = result.sRGBHex;
+          const r = parseInt(hex.slice(1, 3), 16);
+          const g = parseInt(hex.slice(3, 5), 16);
+          const b = parseInt(hex.slice(5, 7), 16);
+          
+          return { r, g, b };
+        } catch (e) {
+          // User cancelled or error occurred
+          if (e.name !== 'AbortError') {
+            console.log('EyeDropper error:', e);
+          }
+          return null;
+        }
+      }
 
-      // Draw the area under cursor to canvas
+      // Fallback: Use element inspection and canvas sampling
       const element = document.elementFromPoint(x, y);
       if (!element) return null;
 
-      // Get computed background color
+      // Try to capture from images, canvas, video
+      if (element.tagName === 'IMG' || element.tagName === 'CANVAS' || element.tagName === 'VIDEO') {
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+        const rect = element.getBoundingClientRect();
+        
+        tempCanvas.width = rect.width;
+        tempCanvas.height = rect.height;
+        
+        try {
+          tempCtx.drawImage(element, 0, 0, rect.width, rect.height);
+          const localX = Math.floor(x - rect.left);
+          const localY = Math.floor(y - rect.top);
+          const imageData = tempCtx.getImageData(localX, localY, 1, 1);
+          return {
+            r: imageData.data[0],
+            g: imageData.data[1],
+            b: imageData.data[2]
+          };
+        } catch (e) {
+          console.log('Cannot read pixel data (CORS):', e);
+        }
+      }
+
+      // Try to capture from SVG
+      if (element.tagName === 'svg' || element.ownerSVGElement) {
+        const computedStyle = window.getComputedStyle(element);
+        const fill = computedStyle.fill;
+        const stroke = computedStyle.stroke;
+        
+        let color = fill !== 'none' ? fill : stroke;
+        if (color && color !== 'none') {
+          const rgbMatch = color.match(/\d+/g);
+          if (rgbMatch && rgbMatch.length >= 3) {
+            return {
+              r: parseInt(rgbMatch[0]),
+              g: parseInt(rgbMatch[1]),
+              b: parseInt(rgbMatch[2])
+            };
+          }
+        }
+      }
+
+      // Get computed styles (works for gradients, solid colors, etc.)
       const computedStyle = window.getComputedStyle(element);
       let color = computedStyle.backgroundColor;
       
-      // Try to get color from background image or actual element
+      // If transparent, try other properties
       if (color === 'rgba(0, 0, 0, 0)' || color === 'transparent') {
-        color = computedStyle.color;
+        color = computedStyle.color || computedStyle.borderColor;
       }
 
-      // Parse RGB
+      // Parse RGB/RGBA
       const rgbMatch = color.match(/\d+/g);
       if (rgbMatch && rgbMatch.length >= 3) {
         return {
@@ -138,35 +195,13 @@ export function initColorFinder() {
         };
       }
 
-      // Fallback: try to capture from canvas if it's an image
-      if (element.tagName === 'IMG' || element.tagName === 'CANVAS') {
-        const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCanvas.width = element.width || element.offsetWidth;
-        tempCanvas.height = element.height || element.offsetHeight;
-        
-        try {
-          tempCtx.drawImage(element, 0, 0);
-          const rect = element.getBoundingClientRect();
-          const localX = x - rect.left;
-          const localY = y - rect.top;
-          const imageData = tempCtx.getImageData(localX, localY, 1, 1);
-          return {
-            r: imageData.data[0],
-            g: imageData.data[1],
-            b: imageData.data[2]
-          };
-        } catch (e) {
-          console.log('Cannot read image data (CORS)');
-        }
-      }
-
       return null;
     } catch (error) {
       console.error('Error getting pixel color:', error);
       return null;
     }
   }
+
 
   // Eyedropper mouse move handler
   function handleEyedropperMove(e) {
@@ -200,12 +235,37 @@ export function initColorFinder() {
     e.preventDefault();
     e.stopPropagation();
     
-    const color = await getPixelColor(e.clientX, e.clientY);
-    if (color) {
-      updateColorDisplay(color.r, color.g, color.b);
-      addToHistory(color.r, color.g, color.b);
+    // If EyeDropper API is available, it handles its own UI
+    if (window.EyeDropper) {
       deactivateEyedropper();
-      showNotification('Color picked!');
+      const color = await getPixelColor(e.clientX, e.clientY);
+      if (color) {
+        updateColorDisplay(color.r, color.g, color.b);
+        addToHistory(color.r, color.g, color.b);
+        showNotification('Color picked!');
+        // Show the panel again after picking
+        if (panel) {
+          panel.style.display = 'flex';
+        }
+      } else {
+        // User cancelled, show panel
+        if (panel) {
+          panel.style.display = 'flex';
+        }
+      }
+    } else {
+      // Fallback method
+      const color = await getPixelColor(e.clientX, e.clientY);
+      if (color) {
+        updateColorDisplay(color.r, color.g, color.b);
+        addToHistory(color.r, color.g, color.b);
+        deactivateEyedropper();
+        showNotification('Color picked!');
+        // Show the panel again after picking
+        if (panel) {
+          panel.style.display = 'flex';
+        }
+      }
     }
   }
 
@@ -222,6 +282,10 @@ export function initColorFinder() {
     const escHandler = (e) => {
       if (e.key === 'Escape') {
         deactivateEyedropper();
+        // Show the panel again when canceling
+        if (panel) {
+          panel.style.display = 'flex';
+        }
         document.removeEventListener('keydown', escHandler);
       }
     };
@@ -307,32 +371,33 @@ export function initColorFinder() {
     panel.style.cssText = `
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       width: 450px; min-width: 400px; min-height: 500px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 16px; box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
+      background: #111827;
+      border: 1px solid #374151;
+      border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
       z-index: 9999999; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       overflow: hidden; display: flex; flex-direction: column;
       resize: both;
     `;
 
     panel.innerHTML = `
-      <div id="cf-header" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.2); cursor: move; user-select: none;">
+      <div id="cf-header" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); padding: 20px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); cursor: move; user-select: none; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <h2 style="margin: 0; font-size: 20px; color: #FFFFFF; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">ColorFinder</h2>
+          <h2 style="margin: 0; font-size: 20px; color: #FFFFFF; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">ColorFinder</h2>
           <button id="close-panel" style="background: rgba(255,255,255,0.2); border: none; font-size: 24px; color: #FFFFFF; cursor: pointer; padding: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;">×</button>
         </div>
       </div>
 
-      <div style="padding: 24px; flex: 1; overflow-y: auto; background: rgba(255,255,255,0.95);">
+      <div style="padding: 24px; flex: 1; overflow-y: auto; background: #1F2937;">
         <!-- Menu Items -->
         <div style="display: flex; flex-direction: column; gap: 12px;">
-          <button class="menu-item" data-action="pick-page" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+          <button class="menu-item" data-action="pick-page" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
               <path d="M7 17L17 7M17 7H7M17 7V17"/>
             </svg>
             <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Pick Color From Page</span>
           </button>
 
-          <button class="menu-item" data-action="color-picker" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+          <button class="menu-item" data-action="color-picker" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="10" fill="#FFFFFF" opacity="0.3"/>
               <circle cx="12" cy="12" r="6" fill="#FFFFFF"/>
@@ -340,7 +405,7 @@ export function initColorFinder() {
             <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Color Picker</span>
           </button>
 
-          <button class="menu-item" data-action="history" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">
+          <button class="menu-item" data-action="history" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
               <circle cx="12" cy="12" r="10"/>
               <polyline points="12 6 12 12 16 14"/>
@@ -349,34 +414,20 @@ export function initColorFinder() {
           </button>
         </div>
 
-        <div style="height: 2px; background: linear-gradient(90deg, transparent, #E5E7EB, transparent); margin: 20px 0;"></div>
+        <div style="height: 2px; background: linear-gradient(90deg, transparent, #374151, transparent); margin: 20px 0;"></div>
 
         <div style="display: flex; flex-direction: column; gap: 12px;">
-          <button class="menu-item" data-action="analyzer" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
+          <button class="menu-item" data-action="analyzer" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
               <circle cx="11" cy="11" r="8"/>
               <path d="M21 21l-4.35-4.35"/>
             </svg>
             <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Webpage Color Analyzer</span>
           </button>
-
-          <button class="menu-item" data-action="palette" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
-              <circle cx="12" cy="12" r="10"/>
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>
-            </svg>
-            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Palette Browser</span>
-          </button>
-
-          <button class="menu-item" data-action="gradient" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);">
-            <div style="width: 24px; height: 24px; background: linear-gradient(135deg, #FFFFFF 0%, rgba(255,255,255,0.5) 100%); border-radius: 6px;"></div>
-            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">CSS Gradient Generator</span>
-          </button>
         </div>
       </div>
 
-      <div id="resize-handle" style="position: absolute; bottom: 0; right: 0; width: 24px; height: 24px; cursor: nwse-resize; background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.3) 50%); border-radius: 0 0 16px 0;"></div>
+      <div id="resize-handle" style="position: absolute; bottom: 0; right: 0; width: 24px; height: 24px; cursor: nwse-resize; background: linear-gradient(135deg, transparent 50%, #3B82F6 50%); border-radius: 0 0 16px 0;"></div>
     `;
 
     document.body.appendChild(panel);
