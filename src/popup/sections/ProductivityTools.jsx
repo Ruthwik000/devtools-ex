@@ -29,13 +29,6 @@ const ProductivityTools = ({ expanded, onToggle, toggles, onToggleChange }) => {
         enabled={toggles.passiveWatching || false}
         onChange={(val) => onToggleChange('passiveWatching', val)}
       />
-      
-      <Toggle
-        label="Live Tracer"
-        description="Match tasks to energy levels"
-        enabled={toggles.energyScheduling || false}
-        onChange={(val) => onToggleChange('energyScheduling', val)}
-      />
     </Section>
   );
 };

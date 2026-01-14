@@ -19,7 +19,6 @@ const featureFiles = [
   'focus-mode.js',
   'focus-detection.js',
   'passive-watching.js',
-  'energy-scheduling.js',
   'speed-improver.js',
   'youtube-adblock.js',
   'github-navigation.js',
@@ -57,11 +56,7 @@ let activeFeatures = {};
 let currentToggles = {};
 
 function handleFeatureToggle(key, value) {
-  console.log('🔄 handleFeatureToggle called:', key, '=', value);
-  
   if (value && !activeFeatures[key]) {
-    // Initialize feature
-    console.log('✅ Initializing feature:', key);
     switch(key) {
       case 'fontFinder':
         activeFeatures[key] = initFontFinder();
@@ -82,12 +77,7 @@ function handleFeatureToggle(key, value) {
         activeFeatures[key] = initFocusDetection();
         break;
       case 'passiveWatching':
-        console.log('🚀 NUCLEAR MODE: Initializing...');
         activeFeatures[key] = initPassiveWatching();
-        console.log('🚀 NUCLEAR MODE: Initialized');
-        break;
-      case 'energyScheduling':
-        activeFeatures[key] = initEnergyScheduling();
         break;
       case 'speedImprover':
         activeFeatures[key] = initSpeedImprover();
@@ -105,27 +95,16 @@ function handleFeatureToggle(key, value) {
         break;
     }
   } else if (!value && activeFeatures[key]) {
-    // Cleanup feature
-    console.log('❌ Cleaning up feature:', key);
-    if (key === 'passiveWatching') {
-      console.log('🛑 NUCLEAR MODE: Toggled OFF - Running cleanup...');
-    }
     if (activeFeatures[key].cleanup) {
       activeFeatures[key].cleanup();
-      console.log('✅ Cleanup completed for:', key);
     }
     delete activeFeatures[key];
-    console.log('✅ Feature removed from activeFeatures:', key);
-  } else {
-    console.log('⚠️ No action needed for:', key, '(value:', value, ', exists:', !!activeFeatures[key], ')');
   }
 }
 
 function initializeFeatures() {
-  console.log('Initializing features with toggles:', currentToggles);
   Object.keys(currentToggles).forEach(key => {
     if (currentToggles[key]) {
-      console.log('Initializing feature:', key);
       handleFeatureToggle(key, true);
     }
   });
@@ -133,38 +112,28 @@ function initializeFeatures() {
 
 // Load initial state - specifically load the 'toggles' object
 browserAPI.storage.sync.get(['toggles'], (data) => {
-  console.log('Loaded storage data:', data);
   if (data.toggles) {
     currentToggles = data.toggles;
-    console.log('Current toggles:', currentToggles);
     initializeFeatures();
-  } else {
-    console.log('No toggles found in storage');
   }
 });
 
 // Listen for toggle changes
 browserAPI.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === 'sync' && changes.toggles) {
-    console.log('Storage changed - toggles:', changes.toggles);
     const newToggles = changes.toggles.newValue || {};
     const oldToggles = changes.toggles.oldValue || {};
     
-    // Update current toggles
     currentToggles = newToggles;
     
-    // Handle each changed toggle
     Object.keys(newToggles).forEach(key => {
       if (newToggles[key] !== oldToggles[key]) {
-        console.log('Toggle changed:', key, '=', newToggles[key]);
         handleFeatureToggle(key, newToggles[key]);
       }
     });
     
-    // Handle removed toggles
     Object.keys(oldToggles).forEach(key => {
       if (!(key in newToggles) && oldToggles[key]) {
-        console.log('Toggle removed:', key);
         handleFeatureToggle(key, false);
       }
     });

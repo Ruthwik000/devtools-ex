@@ -4026,42 +4026,108 @@ function initFocusDetection() {
   let videoStream = null;
   let isDetecting = false;
   let detectionInterval = null;
+  let alertAudio = null;
+  let lastAlertTime = 0;
+  const ALERT_COOLDOWN = 5000; // 5 seconds cooldown between alerts
+
+  // Initialize audio
+  function initAudio() {
+    try {
+      const audioUrl = browserAPI.runtime.getURL('audio/alert.mp3');
+      alertAudio = new Audio(audioUrl);
+      alertAudio.volume = 0.7;
+      
+      alertAudio.addEventListener('error', () => {
+        const wavUrl = browserAPI.runtime.getURL('audio/alert.wav');
+        alertAudio = new Audio(wavUrl);
+        alertAudio.volume = 0.7;
+      });
+    } catch (error) {
+      // Silent fail
+    }
+  }
+
+  // Play alert sound
+  function playAlert() {
+    const now = Date.now();
+    if (now - lastAlertTime < ALERT_COOLDOWN) {
+      return;
+    }
+    
+    lastAlertTime = now;
+    
+    if (alertAudio) {
+      alertAudio.currentTime = 0;
+      alertAudio.play()
+        .catch(() => {
+          try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            gainNode.gain.value = 0.3;
+            
+            oscillator.start();
+            setTimeout(() => oscillator.stop(), 200);
+          } catch (beepErr) {
+            // Silent fail
+          }
+        });
+    }
+  }
 
   // Create floating webcam panel
   function createPanel() {
     panel = document.createElement('div');
     panel.id = 'focus-detection-panel';
     panel.style.cssText = `
-      position: fixed; top: 80px; right: 20px; width: 350px; min-height: 380px;
+      position: fixed; top: 80px; right: 20px; width: 320px; min-height: 340px;
       background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
       border-radius: 16px; border: 1px solid #374151;
       box-shadow: 0 20px 60px rgba(0,0,0,0.6); z-index: 9999998;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       color: #E5E7EB; overflow: hidden; display: flex; flex-direction: column;
-      resize: both; min-width: 300px; min-height: 320px;
+      resize: both; min-width: 280px; min-height: 300px;
     `;
 
     panel.innerHTML = `
-      <div id="focus-header" style="background: linear-gradient(135deg, #374151 0%, #1F2937 100%); padding: 16px 20px; cursor: move; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #374151; user-select: none;">
-        <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: #F9FAFB;">Focus Detection</h2>
-        <button id="close-focus-panel" style="background: transparent; border: none; color: #9CA3AF; cursor: pointer; font-size: 24px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s;">×</button>
+      <style>
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+      </style>
+      <div id="focus-header" style="background: linear-gradient(135deg, #374151 0%, #1F2937 100%); padding: 12px 16px; cursor: move; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #374151; user-select: none;">
+        <h2 style="margin: 0; font-size: 14px; font-weight: 600; color: #F9FAFB;">Focus Detection</h2>
+        <button id="close-focus-panel" style="background: transparent; border: none; color: #9CA3AF; cursor: pointer; font-size: 20px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s;">×</button>
       </div>
 
-      <div style="padding: 16px; flex: 1; display: flex; flex-direction: column;">
-        <p style="font-size: 13px; color: #9CA3AF; margin: 0 0 16px 0;">Detect mobile phone usage via webcam every 2 seconds</p>
+      <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
+        <p style="font-size: 12px; color: #9CA3AF; margin: 0 0 12px 0;">Detect mobile phone usage via webcam every 2 seconds</p>
         
-        <div style="position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 12px; overflow: hidden;">
+        <div style="position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 12px;">
           <video id="focus-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
           <canvas id="focus-canvas" style="display: none;"></canvas>
           <div id="camera-placeholder" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #1F2937;">
             <div style="text-align: center; color: #6B7280;">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 12px;">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px;">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                 <circle cx="12" cy="13" r="4"/>
               </svg>
-              <div style="font-size: 14px;">Camera Off</div>
+              <div style="font-size: 12px;">Camera Off</div>
             </div>
           </div>
+        </div>
+
+        <div id="status-indicator" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; background: #10B981; border-radius: 8px; transition: all 0.3s;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span style="font-size: 16px; font-weight: 600; color: white;">Focused</span>
         </div>
       </div>
 
@@ -4137,6 +4203,9 @@ function initFocusDetection() {
         </svg>
         <span style="font-size: 16px; font-weight: 600; color: white;">Phone Detected!</span>
       `;
+      
+      playAlert();
+      indicator.style.animation = 'pulse 0.5s ease-in-out 3';
     }
   }
 
@@ -4243,7 +4312,23 @@ function initFocusDetection() {
   }
 
   // Initialize
+  initAudio();
   createPanel();
+
+  // Listen for detection results from background
+  browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'phoneDetected' && message.predictions) {
+      updateStatus(false);
+      sendResponse({ received: true });
+    }
+    
+    if (message.action === 'detectionResult' && message.predictions) {
+      updateStatus(false);
+      sendResponse({ received: true });
+    }
+    
+    return true;
+  });
 
   // Notify background to start detection
   browserAPI.runtime.sendMessage({ action: 'startDetection' });
@@ -5867,73 +5952,6 @@ function initPassiveWatching() {
       cleanup: cleanup
     };
   } // End of initializePanel()
-}
-
-
-// ========== energy-scheduling.js ==========
-function initEnergyScheduling() {
-  const panel = document.createElement('div');
-  panel.id = 'energy-scheduling-panel';
-  panel.style.cssText = `
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 280px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 999999;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  `;
-
-  panel.innerHTML = `
-    <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 12px; font-weight: 600; border-radius: 8px 8px 0 0;">
-      ⚡ Energy Level
-      <button id="close-energy-panel" style="float: right; background: none; border: none; color: white; cursor: pointer; font-size: 18px;">×</button>
-    </div>
-    <div style="padding: 16px;">
-      <div style="margin-bottom: 12px; font-size: 13px; color: #6b7280;">How's your energy?</div>
-      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-        <button class="energy-btn" data-level="high" style="flex: 1; padding: 8px; border: 2px solid #10b981; background: white; border-radius: 6px; cursor: pointer; font-size: 12px;">
-          🔥 High
-        </button>
-        <button class="energy-btn" data-level="low" style="flex: 1; padding: 8px; border: 2px solid #f59e0b; background: white; border-radius: 6px; cursor: pointer; font-size: 12px;">
-          😴 Low
-        </button>
-      </div>
-      <div id="energy-suggestion" style="font-size: 12px; color: #374151; padding: 12px; background: #f3f4f6; border-radius: 6px; display: none;"></div>
-    </div>
-  `;
-
-  document.body.appendChild(panel);
-
-  const suggestions = {
-    high: '💪 Great! Focus on complex tasks, coding, or problem-solving.',
-    low: '🧘 Take it easy. Review docs, organize tasks, or take a break.'
-  };
-
-  document.querySelectorAll('.energy-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const level = e.target.dataset.level;
-      const suggestionEl = document.getElementById('energy-suggestion');
-      suggestionEl.textContent = suggestions[level];
-      suggestionEl.style.display = 'block';
-      
-      // Highlight selected button
-      document.querySelectorAll('.energy-btn').forEach(b => {
-        b.style.background = 'white';
-      });
-      e.target.style.background = level === 'high' ? '#d1fae5' : '#fef3c7';
-    });
-  });
-
-  document.getElementById('close-energy-panel').addEventListener('click', () => {
-    panel.remove();
-  });
-
-  return {
-    cleanup: () => panel.remove()
-  };
 }
 
 
@@ -8187,11 +8205,7 @@ let activeFeatures = {};
 let currentToggles = {};
 
 function handleFeatureToggle(key, value) {
-  console.log('🔄 handleFeatureToggle called:', key, '=', value);
-  
   if (value && !activeFeatures[key]) {
-    // Initialize feature
-    console.log('✅ Initializing feature:', key);
     switch(key) {
       case 'fontFinder':
         activeFeatures[key] = initFontFinder();
@@ -8212,12 +8226,7 @@ function handleFeatureToggle(key, value) {
         activeFeatures[key] = initFocusDetection();
         break;
       case 'passiveWatching':
-        console.log('🚀 NUCLEAR MODE: Initializing...');
         activeFeatures[key] = initPassiveWatching();
-        console.log('🚀 NUCLEAR MODE: Initialized');
-        break;
-      case 'energyScheduling':
-        activeFeatures[key] = initEnergyScheduling();
         break;
       case 'speedImprover':
         activeFeatures[key] = initSpeedImprover();
@@ -8235,27 +8244,16 @@ function handleFeatureToggle(key, value) {
         break;
     }
   } else if (!value && activeFeatures[key]) {
-    // Cleanup feature
-    console.log('❌ Cleaning up feature:', key);
-    if (key === 'passiveWatching') {
-      console.log('🛑 NUCLEAR MODE: Toggled OFF - Running cleanup...');
-    }
     if (activeFeatures[key].cleanup) {
       activeFeatures[key].cleanup();
-      console.log('✅ Cleanup completed for:', key);
     }
     delete activeFeatures[key];
-    console.log('✅ Feature removed from activeFeatures:', key);
-  } else {
-    console.log('⚠️ No action needed for:', key, '(value:', value, ', exists:', !!activeFeatures[key], ')');
   }
 }
 
 function initializeFeatures() {
-  console.log('Initializing features with toggles:', currentToggles);
   Object.keys(currentToggles).forEach(key => {
     if (currentToggles[key]) {
-      console.log('Initializing feature:', key);
       handleFeatureToggle(key, true);
     }
   });
@@ -8263,38 +8261,28 @@ function initializeFeatures() {
 
 // Load initial state - specifically load the 'toggles' object
 browserAPI.storage.sync.get(['toggles'], (data) => {
-  console.log('Loaded storage data:', data);
   if (data.toggles) {
     currentToggles = data.toggles;
-    console.log('Current toggles:', currentToggles);
     initializeFeatures();
-  } else {
-    console.log('No toggles found in storage');
   }
 });
 
 // Listen for toggle changes
 browserAPI.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === 'sync' && changes.toggles) {
-    console.log('Storage changed - toggles:', changes.toggles);
     const newToggles = changes.toggles.newValue || {};
     const oldToggles = changes.toggles.oldValue || {};
     
-    // Update current toggles
     currentToggles = newToggles;
     
-    // Handle each changed toggle
     Object.keys(newToggles).forEach(key => {
       if (newToggles[key] !== oldToggles[key]) {
-        console.log('Toggle changed:', key, '=', newToggles[key]);
         handleFeatureToggle(key, newToggles[key]);
       }
     });
     
-    // Handle removed toggles
     Object.keys(oldToggles).forEach(key => {
       if (!(key in newToggles) && oldToggles[key]) {
-        console.log('Toggle removed:', key);
         handleFeatureToggle(key, false);
       }
     });

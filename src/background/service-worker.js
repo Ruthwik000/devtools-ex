@@ -308,19 +308,18 @@ async function detectMobilePhone(imageBase64) {
     console.log('API Response:', data);
 
     if (data.predictions && data.predictions.length > 0) {
-      // Show alert on active tab
+      // Send message to content script to play alert sound
       try {
         const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
         if (tabs[0]) {
-          await chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            func: () => {
-              alert('⚠️ DISTRACTED! Mobile phone detected. Please stay focused!');
-            }
-          });
+          // Send message to content script instead of showing blocking alert
+          chrome.tabs.sendMessage(tabs[0].id, {
+            action: 'phoneDetected',
+            predictions: data.predictions
+          }).catch(err => console.log('Could not send to tab:', err));
         }
       } catch (error) {
-        console.error('Error showing alert:', error);
+        console.error('Error sending detection message:', error);
       }
 
       // Show notification

@@ -6,42 +6,108 @@ export function initFocusDetection() {
   let videoStream = null;
   let isDetecting = false;
   let detectionInterval = null;
+  let alertAudio = null;
+  let lastAlertTime = 0;
+  const ALERT_COOLDOWN = 5000; // 5 seconds cooldown between alerts
+
+  // Initialize audio
+  function initAudio() {
+    try {
+      const audioUrl = browserAPI.runtime.getURL('audio/alert.mp3');
+      alertAudio = new Audio(audioUrl);
+      alertAudio.volume = 0.7;
+      
+      alertAudio.addEventListener('error', () => {
+        const wavUrl = browserAPI.runtime.getURL('audio/alert.wav');
+        alertAudio = new Audio(wavUrl);
+        alertAudio.volume = 0.7;
+      });
+    } catch (error) {
+      // Silent fail
+    }
+  }
+
+  // Play alert sound
+  function playAlert() {
+    const now = Date.now();
+    if (now - lastAlertTime < ALERT_COOLDOWN) {
+      return;
+    }
+    
+    lastAlertTime = now;
+    
+    if (alertAudio) {
+      alertAudio.currentTime = 0;
+      alertAudio.play()
+        .catch(() => {
+          try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            gainNode.gain.value = 0.3;
+            
+            oscillator.start();
+            setTimeout(() => oscillator.stop(), 200);
+          } catch (beepErr) {
+            // Silent fail
+          }
+        });
+    }
+  }
 
   // Create floating webcam panel
   function createPanel() {
     panel = document.createElement('div');
     panel.id = 'focus-detection-panel';
     panel.style.cssText = `
-      position: fixed; top: 80px; right: 20px; width: 350px; min-height: 380px;
+      position: fixed; top: 80px; right: 20px; width: 320px; min-height: 340px;
       background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
       border-radius: 16px; border: 1px solid #374151;
       box-shadow: 0 20px 60px rgba(0,0,0,0.6); z-index: 9999998;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       color: #E5E7EB; overflow: hidden; display: flex; flex-direction: column;
-      resize: both; min-width: 300px; min-height: 320px;
+      resize: both; min-width: 280px; min-height: 300px;
     `;
 
     panel.innerHTML = `
-      <div id="focus-header" style="background: linear-gradient(135deg, #374151 0%, #1F2937 100%); padding: 16px 20px; cursor: move; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #374151; user-select: none;">
-        <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: #F9FAFB;">Focus Detection</h2>
-        <button id="close-focus-panel" style="background: transparent; border: none; color: #9CA3AF; cursor: pointer; font-size: 24px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s;">×</button>
+      <style>
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+      </style>
+      <div id="focus-header" style="background: linear-gradient(135deg, #374151 0%, #1F2937 100%); padding: 12px 16px; cursor: move; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #374151; user-select: none;">
+        <h2 style="margin: 0; font-size: 14px; font-weight: 600; color: #F9FAFB;">Focus Detection</h2>
+        <button id="close-focus-panel" style="background: transparent; border: none; color: #9CA3AF; cursor: pointer; font-size: 20px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s;">×</button>
       </div>
 
-      <div style="padding: 16px; flex: 1; display: flex; flex-direction: column;">
-        <p style="font-size: 13px; color: #9CA3AF; margin: 0 0 16px 0;">Detect mobile phone usage via webcam every 2 seconds</p>
+      <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
+        <p style="font-size: 12px; color: #9CA3AF; margin: 0 0 12px 0;">Detect mobile phone usage via webcam every 2 seconds</p>
         
-        <div style="position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 12px; overflow: hidden;">
+        <div style="position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 12px;">
           <video id="focus-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
           <canvas id="focus-canvas" style="display: none;"></canvas>
           <div id="camera-placeholder" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #1F2937;">
             <div style="text-align: center; color: #6B7280;">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 12px;">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px;">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                 <circle cx="12" cy="13" r="4"/>
               </svg>
-              <div style="font-size: 14px;">Camera Off</div>
+              <div style="font-size: 12px;">Camera Off</div>
             </div>
           </div>
+        </div>
+
+        <div id="status-indicator" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; background: #10B981; border-radius: 8px; transition: all 0.3s;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span style="font-size: 16px; font-weight: 600; color: white;">Focused</span>
         </div>
       </div>
 
@@ -117,6 +183,9 @@ export function initFocusDetection() {
         </svg>
         <span style="font-size: 16px; font-weight: 600; color: white;">Phone Detected!</span>
       `;
+      
+      playAlert();
+      indicator.style.animation = 'pulse 0.5s ease-in-out 3';
     }
   }
 
@@ -223,7 +292,23 @@ export function initFocusDetection() {
   }
 
   // Initialize
+  initAudio();
   createPanel();
+
+  // Listen for detection results from background
+  browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'phoneDetected' && message.predictions) {
+      updateStatus(false);
+      sendResponse({ received: true });
+    }
+    
+    if (message.action === 'detectionResult' && message.predictions) {
+      updateStatus(false);
+      sendResponse({ received: true });
+    }
+    
+    return true;
+  });
 
   // Notify background to start detection
   browserAPI.runtime.sendMessage({ action: 'startDetection' });
