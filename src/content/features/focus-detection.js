@@ -8,6 +8,7 @@ export function initFocusDetection() {
   let detectionInterval = null;
   let alertAudio = null;
   let lastAlertTime = 0;
+  let currentPredictions = []; // Store current predictions for drawing
   const ALERT_COOLDOWN = 5000; // 5 seconds cooldown between alerts
   const DETECTION_INTERVAL = 2000; // 2 seconds
   const CONFIDENCE_THRESHOLD = 0.45;
@@ -145,20 +146,83 @@ export function initFocusDetection() {
       console.log('Camera access granted!');
       isDetecting = true;
       
-      // Hide loading indicator
-      const loading = panel?.querySelector('#camera-loading');
-      if (loading) {
-        loading.innerHTML = `
-          <div style="text-align: center; color: #10B981;">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px;">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <div style="font-size: 12px;">Camera Ready</div>
-          </div>
-        `;
-        setTimeout(() => {
-          if (loading) loading.style.display = 'none';
-        }, 1000);
+      // Create a hidden video element for live feed
+      const video = document.createElement('video');
+      video.id = 'focus-detection-video';
+      video.srcObject = videoStream;
+      video.autoplay = true;
+      video.playsInline = true;
+      video.muted = true;
+      video.style.position = 'fixed';
+      video.style.top = '-9999px';
+      video.style.left = '-9999px';
+      document.body.appendChild(video);
+      
+      // Wait for video to be ready and playing
+      await new Promise((resolve) => {
+        video.onloadedmetadata = () => {
+          video.play().then(resolve);
+        };
+      });
+      
+      console.log('Video ready, dimensions:', video.videoWidth, 'x', video.videoHeight);
+      
+      // Get canvas for drawing
+      const canvas = panel?.querySelector('#detection-canvas');
+      if (canvas) {
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        
+        // Hide loading indicator
+        const loading = panel?.querySelector('#camera-loading');
+        if (loading) {
+          loading.style.display = 'none';
+        }
+        
+        // Start continuous rendering of video feed
+        const renderLoop = () => {
+          if (!isDetecting || !videoStream) return;
+          
+          const ctx = canvas.getContext('2d');
+          if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            // Draw video frame
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Draw bounding boxes on top
+            if (currentPredictions && currentPredictions.length > 0) {
+              currentPredictions.forEach(pred => {
+                const { x, y, width, height, confidence, class: className } = pred;
+                
+                // Determine color based on confidence
+                const isHighConfidence = confidence >= CONFIDENCE_THRESHOLD;
+                const color = isHighConfidence ? '#EF4444' : '#FCD34D';
+                const alpha = isHighConfidence ? 0.8 : 0.5;
+                
+                // Draw bounding box
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                ctx.strokeRect(x - width / 2, y - height / 2, width, height);
+                
+                // Draw filled background for label
+                const label = `${className || 'phone'} ${Math.round(confidence * 100)}%`;
+                ctx.font = 'bold 14px Arial';
+                const textWidth = ctx.measureText(label).width;
+                
+                ctx.fillStyle = color;
+                ctx.globalAlpha = alpha;
+                ctx.fillRect(x - width / 2, y - height / 2 - 25, textWidth + 10, 25);
+                
+                // Draw label text
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = 'white';
+                ctx.fillText(label, x - width / 2 + 5, y - height / 2 - 7);
+              });
+            }
+          }
+          
+          requestAnimationFrame(renderLoop);
+        };
+        renderLoop();
       }
       
       startDetection();
@@ -202,16 +266,12 @@ export function initFocusDetection() {
   // Capture frame and send to Roboflow API
   async function detectPhoneUsage() {
     try {
-      // Create a temporary video element to capture frame
-      const video = document.createElement('video');
-      video.srcObject = videoStream;
-      video.autoplay = true;
-      video.playsInline = true;
-      
-      // Wait for video to be ready
-      await new Promise((resolve) => {
-        video.onloadedmetadata = resolve;
-      });
+      // Get the video element
+      const video = document.getElementById('focus-detection-video');
+      if (!video || video.videoWidth === 0) {
+        console.log('Video not ready yet');
+        return;
+      }
       
       // Create canvas and capture frame
       const canvas = document.createElement('canvas');
@@ -237,8 +297,8 @@ export function initFocusDetection() {
       const data = await response.json();
       console.log('Detection result:', data);
       
-      // Draw detections on canvas
-      drawDetections(imageData, data.predictions || []);
+      // Draw bounding boxes on the display canvas
+      drawBoundingBoxes(data.predictions || []);
       
       // Filter high-confidence predictions
       const highConfidencePredictions = (data.predictions || []).filter(
@@ -293,77 +353,22 @@ export function initFocusDetection() {
     }
   }
 
-  // Draw video frame with bounding boxes
-  function drawDetections(imageData, predictions) {
-    const canvas = panel?.querySelector('#detection-canvas');
-    const loading = panel?.querySelector('#camera-loading');
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
+  // Draw bounding boxes on top of live video feed
+  function drawBoundingBoxes(predictions) {
+    // Store predictions for the render loop to draw
+    currentPredictions = predictions || [];
     
-    img.onerror = () => {
-      console.error('Failed to load image data');
-    };
-    
-    img.onload = () => {
-      // Hide loading indicator
-      if (loading) loading.style.display = 'none';
-      
-      // Set canvas size to match image
-      canvas.width = img.width;
-      canvas.height = img.height;
-      
-      // Draw the image
-      ctx.drawImage(img, 0, 0);
-      
-      // Draw bounding boxes for all predictions
+    // Update detection info
+    const detectionInfo = panel?.querySelector('#detection-info');
+    if (detectionInfo) {
       if (predictions && predictions.length > 0) {
-        predictions.forEach(pred => {
-          const { x, y, width, height, confidence, class: className } = pred;
-          
-          // Determine color based on confidence
-          const isHighConfidence = confidence >= CONFIDENCE_THRESHOLD;
-          const color = isHighConfidence ? '#EF4444' : '#FCD34D'; // Red for high, yellow for low
-          const alpha = isHighConfidence ? 0.8 : 0.5;
-          
-          // Draw bounding box
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 3;
-          ctx.strokeRect(x - width / 2, y - height / 2, width, height);
-          
-          // Draw filled background for label
-          const label = `${className || 'phone'} ${Math.round(confidence * 100)}%`;
-          ctx.font = 'bold 14px Arial';
-          const textWidth = ctx.measureText(label).width;
-          
-          ctx.fillStyle = color;
-          ctx.globalAlpha = alpha;
-          ctx.fillRect(x - width / 2, y - height / 2 - 25, textWidth + 10, 25);
-          
-          // Draw label text
-          ctx.globalAlpha = 1;
-          ctx.fillStyle = 'white';
-          ctx.fillText(label, x - width / 2 + 5, y - height / 2 - 7);
-        });
-        
-        // Update detection info
-        const detectionInfo = panel?.querySelector('#detection-info');
-        if (detectionInfo) {
-          const highConfCount = predictions.filter(p => p.confidence >= CONFIDENCE_THRESHOLD).length;
-          const lowConfCount = predictions.length - highConfCount;
-          detectionInfo.textContent = `Detected: ${highConfCount} high confidence${lowConfCount > 0 ? `, ${lowConfCount} low confidence` : ''} • Threshold: 45%`;
-        }
+        const highConfCount = predictions.filter(p => p.confidence >= CONFIDENCE_THRESHOLD).length;
+        const lowConfCount = predictions.length - highConfCount;
+        detectionInfo.textContent = `Detected: ${highConfCount} high confidence${lowConfCount > 0 ? `, ${lowConfCount} low confidence` : ''} • Threshold: 45%`;
       } else {
-        // Update detection info
-        const detectionInfo = panel?.querySelector('#detection-info');
-        if (detectionInfo) {
-          detectionInfo.textContent = 'Scanning every 2 seconds • Confidence threshold: 45%';
-        }
+        detectionInfo.textContent = 'Scanning every 2 seconds • Confidence threshold: 45%';
       }
-    };
-    
-    img.src = imageData;
+    }
   }
 
   // Attach event listeners
@@ -403,6 +408,13 @@ export function initFocusDetection() {
       videoStream.getTracks().forEach(track => track.stop());
       videoStream = null;
     }
+    
+    // Remove video element
+    const video = document.getElementById('focus-detection-video');
+    if (video) {
+      video.remove();
+    }
+    
     console.log('Focus detection stopped');
   }
 
