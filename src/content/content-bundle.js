@@ -3494,19 +3494,47 @@ function initCheckSEO() {
 // Focus Mode - Remove YouTube distractions for focused learning
 function initFocusMode() {
   const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
-  
+
   if (!window.location.hostname.includes('youtube.com')) {
-    return { cleanup: () => {} };
+    return { cleanup: () => { } };
   }
 
-  console.log('Focus Mode initialized for YouTube');
+  // Check if Focus Mode is enabled via persistent storage
+  const focusModeEnabled = localStorage.getItem('focusModeEnabled');
 
+  // If Focus Mode is explicitly disabled, don't initialize anything
+  if (focusModeEnabled === 'false') {
+    console.log('Focus Mode is disabled - not initializing');
+    return { cleanup: () => { } };
+  }
+
+  // If this is first run or Focus Mode was enabled, initialize it
+  // Default to enabled on first run (focusModeEnabled === null)
+  if (focusModeEnabled === null) {
+    localStorage.setItem('focusModeEnabled', 'true');
+  }
+
+  console.log('Focus Mode initialized and enabled for YouTube');
+
+  // Feature toggle states
   let extensionEnabled = true;
   let showComments = false;
   let showDescription = true;
   let blockShorts = true;
+  let isMinimized = false;
 
-  // Load saved preferences
+  // Load UI state (minimized or expanded)
+  const savedUIState = localStorage.getItem('focusModeUIState');
+  if (savedUIState) {
+    try {
+      const uiState = JSON.parse(savedUIState);
+      isMinimized = uiState.minimized || false;
+    } catch (e) {
+      console.error('Error parsing Focus Mode UI state:', e);
+    }
+  }
+
+  // Load saved feature preferences
   browserAPI.storage.sync.get(['focusModeSettings'], (result) => {
     if (result.focusModeSettings) {
       extensionEnabled = result.focusModeSettings.extensionEnabled !== false;
@@ -3570,6 +3598,27 @@ function initFocusMode() {
       color: #F9FAFB;
     }
 
+    .focus-mode-minimize {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: #9CA3AF;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      transition: all 0.2s;
+      font-weight: bold;
+    }
+
+    .focus-mode-minimize:hover {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3B82F6;
+    }
+
     .focus-mode-close {
       width: 28px;
       height: 28px;
@@ -3588,6 +3637,42 @@ function initFocusMode() {
     .focus-mode-close:hover {
       background: rgba(239, 68, 68, 0.1);
       color: #EF4444;
+    }
+
+    /* Minimized state */
+    .focus-mode-panel.minimized {
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      min-height: 48px;
+      border-radius: 24px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .focus-mode-panel.minimized .focus-mode-header {
+      padding: 0;
+      justify-content: center;
+      border: none;
+    }
+
+    .focus-mode-panel.minimized .focus-mode-title,
+    .focus-mode-panel.minimized .focus-mode-minimize,
+    .focus-mode-panel.minimized .focus-mode-close,
+    .focus-mode-panel.minimized .focus-mode-content,
+    .focus-mode-panel.minimized .focus-mode-footer {
+      display: none;
+    }
+
+    .focus-mode-panel.minimized .focus-mode-logo {
+      width: 32px;
+      height: 32px;
+      margin: 8px;
+    }
+
+    .focus-mode-panel.minimized:hover {
+      transform: scale(1.1);
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
     }
 
     .focus-mode-content {
@@ -3751,62 +3836,196 @@ function initFocusMode() {
   `;
   document.head.appendChild(style);
 
-  // Create focus mode control panel
-  const panel = document.createElement('div');
-  panel.className = 'focus-mode-panel';
-  panel.innerHTML = `
-    <div class="focus-mode-header">
-      <div class="focus-mode-logo">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-        </svg>
-      </div>
-      <div class="focus-mode-title">YouTube Focus Mode</div>
-      <button class="focus-mode-close" title="Close panel">×</button>
-    </div>
-    <div class="focus-mode-content">
-      <div class="focus-mode-toggle-row">
-        <div class="focus-mode-toggle-label">Extension enabled</div>
-        <div class="focus-mode-toggle-switch ${extensionEnabled ? 'active' : ''}" data-toggle="extension">
-          <div class="focus-mode-toggle-knob"></div>
-        </div>
-      </div>
-      <div class="focus-mode-toggle-row">
-        <div class="focus-mode-toggle-label">Comments</div>
-        <div class="focus-mode-toggle-switch ${showComments ? 'active' : ''}" data-toggle="comments">
-          <div class="focus-mode-toggle-knob"></div>
-        </div>
-      </div>
-      <div class="focus-mode-toggle-row">
-        <div class="focus-mode-toggle-label">Description</div>
-        <div class="focus-mode-toggle-switch ${showDescription ? 'active' : ''}" data-toggle="description">
-          <div class="focus-mode-toggle-knob"></div>
-        </div>
-      </div>
-      <div class="focus-mode-toggle-row">
-        <div class="focus-mode-toggle-label">Block Shorts</div>
-        <div class="focus-mode-toggle-switch ${blockShorts ? 'active' : ''}" data-toggle="shorts">
-          <div class="focus-mode-toggle-knob"></div>
-        </div>
-      </div>
-    </div>
-    <div class="focus-mode-footer">
-      <a href="https://github.com/makaroni4/focused_youtube" target="_blank">Source code</a>
-    </div>
-  `;
-  document.body.appendChild(panel);
+  // Panel reference (will be created by ensureUIExists)
+  let panel = null;
+  let header = null;
 
-  // Make panel draggable
+  // Function to create the focus mode control panel
+  function createPanel() {
+    const newPanel = document.createElement('div');
+    newPanel.className = 'focus-mode-panel';
+    newPanel.id = 'focus-mode-panel-unique-id'; // Unique ID to detect existence
+    newPanel.innerHTML = `
+      <div class="focus-mode-header">
+        <div class="focus-mode-logo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+          </svg>
+        </div>
+        <div class="focus-mode-title">YouTube Focus Mode</div>
+        <button class="focus-mode-minimize" title="Minimize panel">−</button>
+        <button class="focus-mode-close" title="Close panel">×</button>
+      </div>
+      <div class="focus-mode-content">
+        <div class="focus-mode-toggle-row">
+          <div class="focus-mode-toggle-label">Extension enabled</div>
+          <div class="focus-mode-toggle-switch ${extensionEnabled ? 'active' : ''}" data-toggle="extension">
+            <div class="focus-mode-toggle-knob"></div>
+          </div>
+        </div>
+        <div class="focus-mode-toggle-row">
+          <div class="focus-mode-toggle-label">Comments</div>
+          <div class="focus-mode-toggle-switch ${showComments ? 'active' : ''}" data-toggle="comments">
+            <div class="focus-mode-toggle-knob"></div>
+          </div>
+        </div>
+        <div class="focus-mode-toggle-row">
+          <div class="focus-mode-toggle-label">Description</div>
+          <div class="focus-mode-toggle-switch ${showDescription ? 'active' : ''}" data-toggle="description">
+            <div class="focus-mode-toggle-knob"></div>
+          </div>
+        </div>
+        <div class="focus-mode-toggle-row">
+          <div class="focus-mode-toggle-label">Block Shorts</div>
+          <div class="focus-mode-toggle-switch ${blockShorts ? 'active' : ''}" data-toggle="shorts">
+            <div class="focus-mode-toggle-knob"></div>
+          </div>
+        </div>
+      </div>
+      <div class="focus-mode-footer">
+        <a href="https://github.com/makaroni4/focused_youtube" target="_blank">Source code</a>
+      </div>
+    `;
+
+    // Apply initial UI state (minimized or expanded only)
+    if (isMinimized) {
+      newPanel.classList.add('minimized');
+    }
+
+    return newPanel;
+  }
+
+  // Function to setup event listeners on the panel
+  function setupPanelEvents(panelElement) {
+    const headerElement = panelElement.querySelector('.focus-mode-header');
+
+    // Make panel draggable
+    headerElement.addEventListener('mousedown', dragStart);
+
+    // Click to expand when minimized
+    panelElement.addEventListener('click', (e) => {
+      if (panelElement.classList.contains('minimized') && !e.target.closest('.focus-mode-close')) {
+        panelElement.classList.remove('minimized');
+        isMinimized = false;
+        saveUIState();
+      }
+    });
+
+    // Minimize button
+    const minimizeBtn = panelElement.querySelector('.focus-mode-minimize');
+    if (minimizeBtn) {
+      minimizeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        panelElement.classList.add('minimized');
+        isMinimized = true;
+        saveUIState();
+      });
+    }
+
+    // Close button - disables Focus Mode entirely
+    panelElement.querySelector('.focus-mode-close').addEventListener('click', () => {
+      // Completely disable Focus Mode
+      localStorage.setItem('focusModeEnabled', 'false');
+
+      // Remove the panel
+      panelElement.remove();
+
+      // Clean up styles and classes
+      const styleEl = document.getElementById('focus-mode-style');
+      if (styleEl) styleEl.remove();
+
+      document.body.classList.remove(
+        'focus-mode-disabled',
+        'focus-mode-show-comments',
+        'focus-mode-hide-description',
+        'focus-mode-block-shorts'
+      );
+
+      console.log('Focus Mode disabled by user');
+
+      // Stop the healing interval
+      if (healingInterval) {
+        clearInterval(healingInterval);
+      }
+    });
+
+    // Toggle switches
+    panelElement.querySelectorAll('.focus-mode-toggle-switch').forEach(toggle => {
+      toggle.addEventListener('click', () => {
+        const type = toggle.dataset.toggle;
+        const isActive = toggle.classList.contains('active');
+
+        if (type === 'extension') {
+          extensionEnabled = !isActive;
+          toggle.classList.toggle('active');
+        } else if (type === 'comments') {
+          showComments = !isActive;
+          toggle.classList.toggle('active');
+        } else if (type === 'description') {
+          showDescription = !isActive;
+          toggle.classList.toggle('active');
+        } else if (type === 'shorts') {
+          blockShorts = !isActive;
+          toggle.classList.toggle('active');
+        }
+
+        applyFocusMode();
+        saveSettings();
+      });
+    });
+
+    return headerElement;
+  }
+
+  // Self-healing: Ensure UI exists and is in the DOM
+  function ensureUIExists() {
+    // Check if Focus Mode is still enabled
+    const currentEnabled = localStorage.getItem('focusModeEnabled');
+    if (currentEnabled === 'false') {
+      // User disabled it, don't recreate
+      return;
+    }
+
+    // Check if panel exists in DOM
+    const existingPanel = document.getElementById('focus-mode-panel-unique-id');
+
+    if (!existingPanel && document.body) {
+      console.log('Focus Mode UI missing - recreating...');
+
+      // Create new panel
+      panel = createPanel();
+      document.body.appendChild(panel);
+
+      // Setup all event listeners
+      header = setupPanelEvents(panel);
+
+      // Update panel UI to match current state
+      updatePanelUI();
+
+      console.log('Focus Mode UI restored');
+    } else if (existingPanel && !panel) {
+      // Panel exists but we lost reference (page navigation)
+      panel = existingPanel;
+      header = panel.querySelector('.focus-mode-header');
+    }
+  }
+
+  // Initial UI creation
+  ensureUIExists();
+
+  // Self-healing interval - check every 2 seconds if UI exists
+  const healingInterval = setInterval(ensureUIExists, 2000);
+
+  // Make panel draggable - these functions are used by setupPanelEvents
   let isDragging = false;
   let currentX, currentY, initialX, initialY;
 
-  const header = panel.querySelector('.focus-mode-header');
-  header.addEventListener('mousedown', dragStart);
-  document.addEventListener('mousemove', drag);
-  document.addEventListener('mouseup', dragEnd);
-
   function dragStart(e) {
-    if (e.target.closest('.focus-mode-close')) return;
+    // Don't drag when clicking on buttons or when minimized
+    if (e.target.closest('.focus-mode-close') || e.target.closest('.focus-mode-minimize')) return;
+    if (panel && panel.classList.contains('minimized')) return;
+
+    if (!panel) return;
     initialX = e.clientX - panel.offsetLeft;
     initialY = e.clientY - panel.offsetTop;
     isDragging = true;
@@ -3814,7 +4033,7 @@ function initFocusMode() {
   }
 
   function drag(e) {
-    if (!isDragging) return;
+    if (!isDragging || !panel) return;
     e.preventDefault();
     currentX = e.clientX - initialX;
     currentY = e.clientY - initialY;
@@ -3825,42 +4044,24 @@ function initFocusMode() {
 
   function dragEnd() {
     isDragging = false;
-    panel.style.cursor = 'default';
+    if (panel) panel.style.cursor = 'default';
   }
 
-  // Close button
-  panel.querySelector('.focus-mode-close').addEventListener('click', () => {
-    panel.remove();
-    browserAPI.storage.sync.set({ focusMode: false });
-  });
+  // Setup global drag listeners
+  document.addEventListener('mousemove', drag);
+  document.addEventListener('mouseup', dragEnd);
 
-  // Toggle switches
-  panel.querySelectorAll('.focus-mode-toggle-switch').forEach(toggle => {
-    toggle.addEventListener('click', () => {
-      const type = toggle.dataset.toggle;
-      const isActive = toggle.classList.contains('active');
-      
-      if (type === 'extension') {
-        extensionEnabled = !isActive;
-        toggle.classList.toggle('active');
-      } else if (type === 'comments') {
-        showComments = !isActive;
-        toggle.classList.toggle('active');
-      } else if (type === 'description') {
-        showDescription = !isActive;
-        toggle.classList.toggle('active');
-      } else if (type === 'shorts') {
-        blockShorts = !isActive;
-        toggle.classList.toggle('active');
-      }
-
-      applyFocusMode();
-      saveSettings();
-    });
-  });
+  // Save UI state to localStorage (only minimized state, not visibility)
+  function saveUIState() {
+    localStorage.setItem('focusModeUIState', JSON.stringify({
+      minimized: isMinimized
+    }));
+  }
 
   // Update panel UI
   function updatePanelUI() {
+    if (!panel) return;
+
     const extensionToggle = panel.querySelector('[data-toggle="extension"]');
     const commentsToggle = panel.querySelector('[data-toggle="comments"]');
     const descriptionToggle = panel.querySelector('[data-toggle="description"]');
@@ -4009,12 +4210,13 @@ function initFocusMode() {
   return {
     cleanup: () => {
       style.remove();
-      panel.remove();
+      if (panel) panel.remove();
       clearInterval(cleanupInterval);
+      clearInterval(healingInterval); // Stop self-healing
       observer.disconnect();
       document.removeEventListener('mousemove', drag);
       document.removeEventListener('mouseup', dragEnd);
-      header.removeEventListener('mousedown', dragStart);
+      if (header) header.removeEventListener('mousedown', dragStart);
       document.removeEventListener('yt-navigate-finish', handleNavigateFinish);
       document.body.classList.remove(
         'focus-mode-disabled',
