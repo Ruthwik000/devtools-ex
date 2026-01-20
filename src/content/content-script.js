@@ -4,6 +4,7 @@ import { initColorFinder } from './features/color-finder.js';
 import { initEditCookie } from './features/edit-cookie.js';
 import { initCheckSEO } from './features/check-seo.js';
 import { initFocusMode } from './features/focus-mode.js';
+import { initFocusDetection } from './features/focus-detection.js';
 import { initPassiveWatching } from './features/passive-watching.js';
 import { initSpeedImprover } from './features/speed-improver.js';
 import { initYouTubeAdBlock } from './features/youtube-adblock.js';
@@ -70,6 +71,9 @@ function handleFeatureToggle(feature, enabled) {
       break;
     case 'focusMode':
       activeFeatures[feature] = initFocusMode();
+      break;
+    case 'focusDetection':
+      activeFeatures[feature] = initFocusDetection();
       break;
     case 'passiveWatching':
       activeFeatures[feature] = initPassiveWatching();

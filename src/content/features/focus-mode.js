@@ -501,10 +501,12 @@ export function initFocusMode() {
   });
 
   // Listen for YouTube navigation
-  document.addEventListener('yt-navigate-finish', () => {
+  const handleNavigateFinish = () => {
     applyFocusMode();
     removeDistractingElements();
-  });
+  };
+
+  document.addEventListener('yt-navigate-finish', handleNavigateFinish);
 
   // Run on load
   applyFocusMode();
@@ -517,7 +519,17 @@ export function initFocusMode() {
       panel.remove();
       clearInterval(cleanupInterval);
       observer.disconnect();
-      document.body.classList.remove('focus-mode-disabled', 'focus-mode-show-comments', 'focus-mode-hide-description', 'focus-mode-no-infinite-scroll');
+      document.removeEventListener('mousemove', drag);
+      document.removeEventListener('mouseup', dragEnd);
+      header.removeEventListener('mousedown', dragStart);
+      document.removeEventListener('yt-navigate-finish', handleNavigateFinish);
+      document.body.classList.remove(
+        'focus-mode-disabled',
+        'focus-mode-show-comments',
+        'focus-mode-hide-description',
+        'focus-mode-block-shorts',
+        'focus-mode-no-infinite-scroll'
+      );
       console.log('Focus Mode disabled');
     }
   };

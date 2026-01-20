@@ -3994,10 +3994,12 @@ function initFocusMode() {
   });
 
   // Listen for YouTube navigation
-  document.addEventListener('yt-navigate-finish', () => {
+  const handleNavigateFinish = () => {
     applyFocusMode();
     removeDistractingElements();
-  });
+  };
+
+  document.addEventListener('yt-navigate-finish', handleNavigateFinish);
 
   // Run on load
   applyFocusMode();
@@ -4010,7 +4012,17 @@ function initFocusMode() {
       panel.remove();
       clearInterval(cleanupInterval);
       observer.disconnect();
-      document.body.classList.remove('focus-mode-disabled', 'focus-mode-show-comments', 'focus-mode-hide-description', 'focus-mode-no-infinite-scroll');
+      document.removeEventListener('mousemove', drag);
+      document.removeEventListener('mouseup', dragEnd);
+      header.removeEventListener('mousedown', dragStart);
+      document.removeEventListener('yt-navigate-finish', handleNavigateFinish);
+      document.body.classList.remove(
+        'focus-mode-disabled',
+        'focus-mode-show-comments',
+        'focus-mode-hide-description',
+        'focus-mode-block-shorts',
+        'focus-mode-no-infinite-scroll'
+      );
       console.log('Focus Mode disabled');
     }
   };
@@ -5964,6 +5976,10 @@ function initSpeedImprover() {
   let currentSpeed = 1;
   let video = null;
   let videoCheckInterval = null;
+  let rateChangeHandler = null;
+  let resetWatcher = null;
+  let isCollapsed = false;
+  const COLLAPSE_KEY = 'speedControlCollapsed';
 
   // Dragging state
   let isDragging = false;
@@ -6036,6 +6052,7 @@ function initSpeedImprover() {
         <div style="font-weight: 600; font-size: 14px; color: #E5E7EB;">Video Speed Control</div>
       </div>
       <div style="display: flex; align-items: center; gap: 6px;">
+        <button id="collapse-speed-panel" title="Minimize" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 16px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">–</button>
         <button id="reset-speed-btn" title="Reset to 1x" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 14px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
@@ -6049,84 +6066,89 @@ function initSpeedImprover() {
       </div>
     </div>
 
-    <!-- Speed Slider -->
-    <div style="margin-bottom: 16px;">
-      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-        <button id="decrease-speed-btn" style="width: 36px; height: 36px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #E5E7EB; font-size: 18px; font-weight: 300; transition: all 0.2s; flex-shrink: 0;">−</button>
-        
-        <div style="flex: 1; position: relative;">
-          <input type="range" id="speed-slider" min="0.25" max="16" step="0.25" value="1" style="width: 100%; height: 6px; background: linear-gradient(to right, #3B82F6 0%, #3B82F6 6.25%, #4B5563 6.25%, #4B5563 100%); border-radius: 3px; outline: none; -webkit-appearance: none; cursor: pointer;">
-          <style>
-            #speed-slider::-webkit-slider-thumb {
-              -webkit-appearance: none;
-              appearance: none;
-              width: 16px;
-              height: 16px;
-              background: #60A5FA;
-              border: 2px solid #1E293B;
-              border-radius: 50%;
-              cursor: grab;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            }
-            #speed-slider::-webkit-slider-thumb:active {
-              cursor: grabbing;
-              transform: scale(1.1);
-            }
-            #speed-slider::-moz-range-thumb {
-              width: 16px;
-              height: 16px;
-              background: #60A5FA;
-              border: 2px solid #1E293B;
-              border-radius: 50%;
-              cursor: grab;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            }
-          </style>
-        </div>
-        
-        <button id="increase-speed-btn" style="width: 36px; height: 36px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #E5E7EB; font-size: 18px; font-weight: 300; transition: all 0.2s; flex-shrink: 0;">+</button>
-      </div>
-    </div>
-
-    <!-- Current Speed Display -->
-    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <div style="font-size: 11px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.3px;">Current playback rate</div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <div style="font-size: 10px; color: #6B7280;">×</div>
-          <input type="number" id="speed-input" min="0.25" max="16" step="0.25" value="1" style="width: 60px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #E5E7EB; padding: 6px 8px; border-radius: 6px; font-size: 14px; font-weight: 600; text-align: center; outline: none;">
-          <button id="apply-speed-btn" style="background: linear-gradient(135deg, #3B82F6, #2563EB); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 4px;">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polygon points="5 3 19 12 5 21 5 3"/>
-            </svg>
-            Apply
-          </button>
+    <div id="speed-body" style="display: flex; flex-direction: column; gap: 14px; flex: 1;">
+      <!-- Speed Slider -->
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+          <button id="decrease-speed-btn" style="width: 36px; height: 36px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #E5E7EB; font-size: 18px; font-weight: 300; transition: all 0.2s; flex-shrink: 0;">−</button>
+          
+          <div style="flex: 1; position: relative;">
+            <input type="range" id="speed-slider" min="0.25" max="16" step="0.25" value="1" style="width: 100%; height: 6px; background: linear-gradient(to right, #3B82F6 0%, #3B82F6 6.25%, #4B5563 6.25%, #4B5563 100%); border-radius: 3px; outline: none; -webkit-appearance: none; cursor: pointer;">
+            <style>
+              #speed-slider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 16px;
+                height: 16px;
+                background: #60A5FA;
+                border: 2px solid #1E293B;
+                border-radius: 50%;
+                cursor: grab;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              }
+              #speed-slider::-webkit-slider-thumb:active {
+                cursor: grabbing;
+                transform: scale(1.1);
+              }
+              #speed-slider::-moz-range-thumb {
+                width: 16px;
+                height: 16px;
+                background: #60A5FA;
+                border: 2px solid #1E293B;
+                border-radius: 50%;
+                cursor: grab;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              }
+            </style>
+          </div>
+          
+          <button id="increase-speed-btn" style="width: 36px; height: 36px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #E5E7EB; font-size: 18px; font-weight: 300; transition: all 0.2s; flex-shrink: 0;">+</button>
         </div>
       </div>
-    </div>
 
-    <!-- Quick Presets -->
-    <div style="margin-bottom: 12px;">
-      <div style="font-size: 10px; color: #9CA3AF; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px;">Quick Presets</div>
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
-        <button class="preset-btn" data-speed="0.5" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">0.5×</button>
-        <button class="preset-btn" data-speed="1" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">1×</button>
-        <button class="preset-btn" data-speed="1.5" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">1.5×</button>
-        <button class="preset-btn" data-speed="2" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">2×</button>
-        <button class="preset-btn" data-speed="2.5" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">2.5×</button>
-        <button class="preset-btn" data-speed="3" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">3×</button>
-        <button class="preset-btn" data-speed="4" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">4×</button>
-        <button class="preset-btn" data-speed="8" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">8×</button>
+      <!-- Current Speed Display -->
+      <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="font-size: 11px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.3px;">Current playback rate</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="font-size: 10px; color: #6B7280;">×</div>
+            <input type="number" id="speed-input" min="0.25" max="16" step="0.25" value="1" style="width: 60px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #E5E7EB; padding: 6px 8px; border-radius: 6px; font-size: 14px; font-weight: 600; text-align: center; outline: none;">
+            <button id="apply-speed-btn" style="background: linear-gradient(135deg, #3B82F6, #2563EB); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 4px;">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              Apply
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- Video Status -->
-    <div id="video-status" style="font-size: 9px; color: #6B7280; text-align: center; padding: 6px; background: rgba(255,255,255,0.03); border-radius: 5px;">
-      Searching for video...
+      <!-- Quick Presets -->
+      <div>
+        <div style="font-size: 10px; color: #9CA3AF; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px;">Quick Presets</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+          <button class="preset-btn" data-speed="0.5" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">0.5×</button>
+          <button class="preset-btn" data-speed="1" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">1×</button>
+          <button class="preset-btn" data-speed="1.5" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">1.5×</button>
+          <button class="preset-btn" data-speed="2" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">2×</button>
+          <button class="preset-btn" data-speed="2.5" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">2.5×</button>
+          <button class="preset-btn" data-speed="3" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">3×</button>
+          <button class="preset-btn" data-speed="4" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">4×</button>
+          <button class="preset-btn" data-speed="8" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">8×</button>
+        </div>
+      </div>
+
+      <!-- Video Status -->
+      <div id="video-status" style="font-size: 9px; color: #6B7280; text-align: center; padding: 6px; background: rgba(255,255,255,0.03); border-radius: 5px;">
+        Searching for video...
+      </div>
     </div>
   `;
 
   document.body.appendChild(panel);
+
+  const body = document.getElementById('speed-body');
+  const collapseBtn = document.getElementById('collapse-speed-panel');
 
   // Add resize handle
   const resizeHandle = document.createElement('div');
@@ -6146,27 +6168,45 @@ function initSpeedImprover() {
 
   // Find and monitor video
   function updateVideo() {
-    video = findVideo();
+    const nextVideo = findVideo();
     const statusEl = document.getElementById('video-status');
     
+    if (nextVideo !== video) {
+      detachRateChangeListener();
+      video = nextVideo;
+      bindRateChangeListener();
+    }
+
     if (video) {
       statusEl.textContent = `Video found: ${video.videoWidth}×${video.videoHeight}`;
       statusEl.style.color = '#10B981';
       
       // Apply current speed
       video.playbackRate = currentSpeed;
-      
-      // Listen for speed changes from native controls
-      video.addEventListener('ratechange', () => {
-        if (Math.abs(video.playbackRate - currentSpeed) > 0.01) {
-          currentSpeed = video.playbackRate;
-          updateUI();
-        }
-      });
     } else {
       statusEl.textContent = 'No video found on page';
       statusEl.style.color = '#EF4444';
     }
+  }
+
+  function bindRateChangeListener() {
+    if (!video) return;
+
+    rateChangeHandler = () => {
+      if (Math.abs(video.playbackRate - currentSpeed) > 0.01) {
+        currentSpeed = video.playbackRate;
+        updateUI();
+      }
+    };
+
+    video.addEventListener('ratechange', rateChangeHandler);
+  }
+
+  function detachRateChangeListener() {
+    if (video && rateChangeHandler) {
+      video.removeEventListener('ratechange', rateChangeHandler);
+    }
+    rateChangeHandler = null;
   }
 
   // Update UI elements
@@ -6180,6 +6220,37 @@ function initSpeedImprover() {
     slider.style.background = `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${percentage}%, #4B5563 ${percentage}%, #4B5563 100%)`;
   }
 
+  function updateCollapsedState() {
+    if (!body || !collapseBtn) return;
+
+    if (isCollapsed) {
+      body.style.display = 'none';
+      panel.style.minHeight = '64px';
+      panel.style.height = 'auto';
+      collapseBtn.textContent = '+';
+      collapseBtn.title = 'Expand';
+    } else {
+      body.style.display = 'flex';
+      panel.style.minHeight = '180px';
+      panel.style.height = '';
+      collapseBtn.textContent = '–';
+      collapseBtn.title = 'Minimize';
+    }
+  }
+
+  function toggleCollapse() {
+    isCollapsed = !isCollapsed;
+    updateCollapsedState();
+    browserAPI.storage.local.set({ [COLLAPSE_KEY]: isCollapsed });
+  }
+
+  browserAPI.storage.local.get([COLLAPSE_KEY], (result) => {
+    if (typeof result[COLLAPSE_KEY] === 'boolean') {
+      isCollapsed = result[COLLAPSE_KEY];
+    }
+    updateCollapsedState();
+  });
+
   // Set speed
   function setSpeed(speed) {
     speed = Math.max(0.25, Math.min(16, speed));
@@ -6190,6 +6261,28 @@ function initSpeedImprover() {
     }
     
     updateUI();
+  }
+
+  function resetPlaybackRateForAllVideos() {
+    document.querySelectorAll('video').forEach(v => {
+      if (v.playbackRate !== 1) {
+        v.playbackRate = 1;
+      }
+    });
+  }
+
+  function stopResetWatcher() {
+    if (resetWatcher) {
+      clearInterval(resetWatcher);
+      resetWatcher = null;
+    }
+  }
+
+  function startResetWatcher() {
+    resetPlaybackRateForAllVideos();
+    stopResetWatcher();
+    resetWatcher = setInterval(resetPlaybackRateForAllVideos, 1000);
+    setTimeout(stopResetWatcher, 5000);
   }
 
   // Check for video periodically
@@ -6203,6 +6296,8 @@ function initSpeedImprover() {
   slider.addEventListener('input', (e) => {
     setSpeed(parseFloat(e.target.value));
   });
+
+  collapseBtn.addEventListener('click', toggleCollapse);
 
   // Decrease button
   document.getElementById('decrease-speed-btn').addEventListener('click', () => {
@@ -6266,7 +6361,7 @@ function initSpeedImprover() {
   // Make panel draggable
   const header = document.getElementById('speed-header');
   
-  header.addEventListener('mousedown', (e) => {
+  function handleDragStart(e) {
     if (e.target.closest('button')) return;
     
     isDragging = true;
@@ -6283,10 +6378,12 @@ function initSpeedImprover() {
     
     header.style.cursor = 'grabbing';
     e.preventDefault();
-  });
+  }
+
+  header.addEventListener('mousedown', handleDragStart);
 
   // Make panel resizable
-  resizeHandle.addEventListener('mousedown', (e) => {
+  function handleResizeStart(e) {
     isResizing = true;
     resizeStartX = e.clientX;
     resizeStartY = e.clientY;
@@ -6296,10 +6393,12 @@ function initSpeedImprover() {
     
     e.preventDefault();
     e.stopPropagation();
-  });
+  }
+
+  resizeHandle.addEventListener('mousedown', handleResizeStart);
 
   // Mouse move handler
-  document.addEventListener('mousemove', (e) => {
+  function handleMouseMove(e) {
     if (isDragging) {
       const deltaX = e.clientX - dragStartX;
       const deltaY = e.clientY - dragStartY;
@@ -6330,10 +6429,12 @@ function initSpeedImprover() {
       panel.style.width = newWidth + 'px';
       panel.style.height = newHeight + 'px';
     }
-  });
+  }
+
+  document.addEventListener('mousemove', handleMouseMove);
 
   // Mouse up handler
-  document.addEventListener('mouseup', () => {
+  function handleMouseUp() {
     if (isDragging) {
       isDragging = false;
       header.style.cursor = 'move';
@@ -6341,17 +6442,19 @@ function initSpeedImprover() {
     if (isResizing) {
       isResizing = false;
     }
-  });
+  }
+
+  document.addEventListener('mouseup', handleMouseUp);
 
   // Close panel
   document.getElementById('close-speed-panel').addEventListener('click', () => {
-    panel.remove();
-    clearInterval(videoCheckInterval);
+    teardown();
     browserAPI.storage.sync.set({ speedImprover: false });
   });
 
   // Hover effects for header buttons
   const headerButtons = [
+    'collapse-speed-panel',
     'reset-speed-btn',
     'help-speed-btn',
     'close-speed-panel'
@@ -6395,16 +6498,30 @@ function initSpeedImprover() {
     applyBtn.style.boxShadow = 'none';
   });
 
+  function teardown() {
+    if (panel && panel.parentNode) {
+      panel.remove();
+    }
+    clearInterval(videoCheckInterval);
+    videoCheckInterval = null;
+    stopResetWatcher();
+    detachRateChangeListener();
+    currentSpeed = 1;
+    startResetWatcher();
+    video = null;
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+    resizeHandle.removeEventListener('mousedown', handleResizeStart);
+    header.removeEventListener('mousedown', handleDragStart);
+    collapseBtn.removeEventListener('click', toggleCollapse);
+    console.log('Video Speed Control disabled');
+  }
+
   console.log('Video Speed Control initialized');
 
   return {
     cleanup: () => {
-      panel.remove();
-      clearInterval(videoCheckInterval);
-      if (video) {
-        video.playbackRate = 1;
-      }
-      console.log('Video Speed Control disabled');
+      teardown();
     }
   };
 }
