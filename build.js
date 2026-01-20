@@ -70,6 +70,23 @@ async function buildExtension() {
     console.log(`Copied ${audioFiles.filter(f => f.endsWith('.mp3') || f.endsWith('.wav')).length} audio files`);
   }
   
+  // Copy logos folder
+  console.log('Copying logos...');
+  if (!existsSync('dist/logos')) {
+    mkdirSync('dist/logos', { recursive: true });
+  }
+  
+  // Copy all logo files if they exist
+  if (existsSync('logos')) {
+    const logoFiles = readdirSync('logos');
+    logoFiles.forEach(file => {
+      if (file.endsWith('.png') || file.endsWith('.svg') || file.endsWith('.jpg') || file.endsWith('.jpeg')) {
+        copyFileSync(`logos/${file}`, `dist/logos/${file}`);
+      }
+    });
+    console.log(`Copied ${logoFiles.filter(f => f.endsWith('.png') || f.endsWith('.svg') || f.endsWith('.jpg') || f.endsWith('.jpeg')).length} logo files`);
+  }
+  
   console.log('✅ Build complete! Load the dist/ folder in Chrome.');
   console.log('');
   console.log('Next steps:');

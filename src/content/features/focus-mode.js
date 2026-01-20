@@ -6,22 +6,7 @@ export function initFocusMode() {
     return { cleanup: () => { } };
   }
 
-  // Check if Focus Mode is enabled via persistent storage
-  const focusModeEnabled = localStorage.getItem('focusModeEnabled');
-
-  // If Focus Mode is explicitly disabled, don't initialize anything
-  if (focusModeEnabled === 'false') {
-    console.log('Focus Mode is disabled - not initializing');
-    return { cleanup: () => { } };
-  }
-
-  // If this is first run or Focus Mode was enabled, initialize it
-  // Default to enabled on first run (focusModeEnabled === null)
-  if (focusModeEnabled === null) {
-    localStorage.setItem('focusModeEnabled', 'true');
-  }
-
-  console.log('Focus Mode initialized and enabled for YouTube');
+  console.log('Focus Mode initialized for YouTube');
 
   // Feature toggle states
   let extensionEnabled = true;
@@ -76,6 +61,18 @@ export function initFocusMode() {
       min-height: 280px;
     }
 
+    .focus-mode-panel .resize-handle {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 20px;
+      height: 20px;
+      cursor: nwse-resize;
+      background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.1) 50%);
+      border-radius: 0 0 12px 0;
+      z-index: 10;
+    }
+
     .focus-mode-header {
       background: linear-gradient(135deg, #374151 0%, #1F2937 100%);
       padding: 14px 16px;
@@ -91,11 +88,18 @@ export function initFocusMode() {
       width: 28px;
       height: 28px;
       background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-      border-radius: 6px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      overflow: hidden;
+    }
+    
+    .focus-mode-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     .focus-mode-title {
@@ -153,14 +157,24 @@ export function initFocusMode() {
       min-width: 48px;
       min-height: 48px;
       border-radius: 24px;
-      cursor: pointer;
+      cursor: move;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      resize: none;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+
+    .focus-mode-panel.minimized .resize-handle {
+      display: none;
     }
 
     .focus-mode-panel.minimized .focus-mode-header {
       padding: 0;
       justify-content: center;
       border: none;
+      cursor: move;
+      background: transparent;
     }
 
     .focus-mode-panel.minimized .focus-mode-title,
@@ -172,14 +186,19 @@ export function initFocusMode() {
     }
 
     .focus-mode-panel.minimized .focus-mode-logo {
-      width: 32px;
-      height: 32px;
-      margin: 8px;
+      width: 48px;
+      height: 48px;
+      margin: 0;
+      border-radius: 50%;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
     .focus-mode-panel.minimized:hover {
       transform: scale(1.1);
-      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+    }
+    
+    .focus-mode-panel.minimized:hover .focus-mode-logo {
+      box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
     }
 
     .focus-mode-content {
@@ -294,33 +313,39 @@ export function initFocusMode() {
     }
 
     /* Block Shorts - Hide all shorts content */
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-reel-shelf-renderer,
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-rich-shelf-renderer[is-shorts],
-    body:not(.focus-mode-disabled).focus-mode-block-shorts [is-shorts],
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-guide-entry-renderer:has([title="Shorts"]),
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-mini-guide-entry-renderer:has([aria-label="Shorts"]),
-    body:not(.focus-mode-disabled).focus-mode-block-shorts a[href^="/shorts"],
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-rich-item-renderer:has(a[href^="/shorts"]),
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-video-renderer:has(a[href^="/shorts"]),
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-grid-video-renderer:has(a[href^="/shorts"]),
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-compact-video-renderer:has(a[href^="/shorts"]),
-    body:not(.focus-mode-disabled).focus-mode-block-shorts #shorts-container,
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-reel-video-renderer {
+    body.focus-mode-block-shorts ytd-reel-shelf-renderer,
+    body.focus-mode-block-shorts ytd-rich-shelf-renderer[is-shorts],
+    body.focus-mode-block-shorts [is-shorts],
+    body.focus-mode-block-shorts ytd-guide-entry-renderer:has([title="Shorts"]),
+    body.focus-mode-block-shorts ytd-mini-guide-entry-renderer:has([aria-label="Shorts"]),
+    body.focus-mode-block-shorts a[href^="/shorts"],
+    body.focus-mode-block-shorts ytd-rich-item-renderer:has(a[href^="/shorts"]),
+    body.focus-mode-block-shorts ytd-video-renderer:has(a[href^="/shorts"]),
+    body.focus-mode-block-shorts ytd-grid-video-renderer:has(a[href^="/shorts"]),
+    body.focus-mode-block-shorts ytd-compact-video-renderer:has(a[href^="/shorts"]),
+    body.focus-mode-block-shorts #shorts-container,
+    body.focus-mode-block-shorts ytd-reel-video-renderer {
       display: none !important;
     }
 
     /* Hide Shorts tab in channel pages */
-    body:not(.focus-mode-disabled).focus-mode-block-shorts tp-yt-paper-tab:has([tab-title="Shorts"]),
-    body:not(.focus-mode-disabled).focus-mode-block-shorts yt-tab-shape:has([tab-title="Shorts"]) {
+    body.focus-mode-block-shorts tp-yt-paper-tab:has([tab-title="Shorts"]),
+    body.focus-mode-block-shorts yt-tab-shape:has([tab-title="Shorts"]) {
       display: none !important;
     }
 
     /* Block navigation to Shorts */
-    body:not(.focus-mode-disabled).focus-mode-block-shorts [href*="/shorts/"],
-    body:not(.focus-mode-disabled).focus-mode-block-shorts [href*="youtube.com/shorts"] {
+    body.focus-mode-block-shorts [href*="/shorts/"],
+    body.focus-mode-block-shorts [href*="youtube.com/shorts"] {
       pointer-events: none !important;
       opacity: 0 !important;
       display: none !important;
+    }
+    
+    /* When shorts blocking is disabled, ensure shorts are visible */
+    body:not(.focus-mode-block-shorts) ytd-guide-entry-renderer:has([title="Shorts"]),
+    body:not(.focus-mode-block-shorts) ytd-mini-guide-entry-renderer:has([aria-label="Shorts"]) {
+      display: block !important;
     }
 
     /* Hide end screen recommendations */
@@ -355,9 +380,7 @@ export function initFocusMode() {
     newPanel.innerHTML = `
       <div class="focus-mode-header">
         <div class="focus-mode-logo">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-          </svg>
+          <img src="${browserAPI.runtime.getURL('logos/youtube-focus-logo.png')}" alt="YouTube Focus" style="width: 100%; height: 100%; object-fit: contain;">
         </div>
         <div class="focus-mode-title">YouTube Focus Mode</div>
         <button class="focus-mode-minimize" title="Minimize panel">−</button>
@@ -389,9 +412,8 @@ export function initFocusMode() {
           </div>
         </div>
       </div>
-      <div class="focus-mode-footer">
-        <a href="https://github.com/makaroni4/focused_youtube" target="_blank">Source code</a>
-      </div>
+     
+      <div class="resize-handle"></div>
     `;
 
     // Apply initial UI state (minimized or expanded only)
@@ -406,14 +428,22 @@ export function initFocusMode() {
   function setupPanelEvents(panelElement) {
     const headerElement = panelElement.querySelector('.focus-mode-header');
 
-    // Make panel draggable
+    // Make panel draggable from header
     headerElement.addEventListener('mousedown', dragStart);
+    
+    // Make entire panel draggable when minimized
+    panelElement.addEventListener('mousedown', (e) => {
+      if (panelElement.classList.contains('minimized')) {
+        dragStart(e);
+      }
+    });
 
     // Click to expand when minimized
     panelElement.addEventListener('click', (e) => {
-      if (panelElement.classList.contains('minimized') && !e.target.closest('.focus-mode-close')) {
+      if (panelElement.classList.contains('minimized') && !e.target.closest('.focus-mode-close') && !isDragging) {
         panelElement.classList.remove('minimized');
         isMinimized = false;
+        panelElement.style.cursor = 'default';
         saveUIState();
       }
     });
@@ -424,6 +454,7 @@ export function initFocusMode() {
       minimizeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         panelElement.classList.add('minimized');
+        panelElement.style.cursor = 'move';
         isMinimized = true;
         saveUIState();
       });
@@ -431,9 +462,6 @@ export function initFocusMode() {
 
     // Close button - disables Focus Mode entirely
     panelElement.querySelector('.focus-mode-close').addEventListener('click', () => {
-      // Completely disable Focus Mode
-      localStorage.setItem('focusModeEnabled', 'false');
-
       // Remove the panel
       panelElement.remove();
 
@@ -448,12 +476,19 @@ export function initFocusMode() {
         'focus-mode-block-shorts'
       );
 
-      console.log('Focus Mode disabled by user');
+      console.log('Focus Mode panel closed');
 
       // Stop the healing interval
       if (healingInterval) {
         clearInterval(healingInterval);
       }
+      
+      // Turn off the toggle in popup
+      browserAPI.storage.sync.get(['toggles'], (result) => {
+        const toggles = result.toggles || {};
+        toggles.focusMode = false;
+        browserAPI.storage.sync.set({ toggles });
+      });
     });
 
     // Toggle switches
@@ -486,13 +521,6 @@ export function initFocusMode() {
 
   // Self-healing: Ensure UI exists and is in the DOM
   function ensureUIExists() {
-    // Check if Focus Mode is still enabled
-    const currentEnabled = localStorage.getItem('focusModeEnabled');
-    if (currentEnabled === 'false') {
-      // User disabled it, don't recreate
-      return;
-    }
-
     // Check if panel exists in DOM
     const existingPanel = document.getElementById('focus-mode-panel-unique-id');
 
@@ -528,11 +556,16 @@ export function initFocusMode() {
   let currentX, currentY, initialX, initialY;
 
   function dragStart(e) {
-    // Don't drag when clicking on buttons or when minimized
+    // Don't drag when clicking on buttons
     if (e.target.closest('.focus-mode-close') || e.target.closest('.focus-mode-minimize')) return;
-    if (panel && panel.classList.contains('minimized')) return;
-
+    
+    // When minimized, allow dragging from anywhere except close button
+    // When expanded, only drag from header
     if (!panel) return;
+    
+    const isMinimizedNow = panel.classList.contains('minimized');
+    if (!isMinimizedNow && !e.target.closest('.focus-mode-header')) return;
+
     initialX = e.clientX - panel.offsetLeft;
     initialY = e.clientY - panel.offsetTop;
     isDragging = true;
@@ -551,7 +584,10 @@ export function initFocusMode() {
 
   function dragEnd() {
     isDragging = false;
-    if (panel) panel.style.cursor = 'default';
+    if (panel) {
+      const isMinimizedNow = panel.classList.contains('minimized');
+      panel.style.cursor = isMinimizedNow ? 'move' : 'default';
+    }
   }
 
   // Setup global drag listeners
@@ -640,38 +676,13 @@ export function initFocusMode() {
   function removeDistractingElements() {
     if (!extensionEnabled) return;
 
-    // Block Shorts if enabled
+    // Block Shorts if enabled - only redirect, don't remove elements
     if (blockShorts) {
       // Redirect if on shorts page
       if (window.location.pathname.includes('/shorts/')) {
         window.location.href = 'https://www.youtube.com/';
         return;
       }
-
-      // Remove all shorts elements
-      const shortsElements = document.querySelectorAll(`
-        ytd-reel-shelf-renderer,
-        ytd-rich-shelf-renderer[is-shorts],
-        [is-shorts],
-        ytd-guide-entry-renderer:has([title="Shorts"]),
-        ytd-mini-guide-entry-renderer:has([aria-label="Shorts"]),
-        a[href^="/shorts"],
-        ytd-rich-item-renderer:has(a[href^="/shorts"]),
-        ytd-video-renderer:has(a[href^="/shorts"]),
-        ytd-grid-video-renderer:has(a[href^="/shorts"]),
-        ytd-compact-video-renderer:has(a[href^="/shorts"]),
-        #shorts-container,
-        ytd-reel-video-renderer,
-        tp-yt-paper-tab:has([tab-title="Shorts"]),
-        yt-tab-shape:has([tab-title="Shorts"])
-      `);
-      shortsElements.forEach(el => el.remove());
-
-      // Block navigation to shorts
-      document.querySelectorAll('a[href*="/shorts/"], a[href*="youtube.com/shorts"]').forEach(link => {
-        link.style.display = 'none';
-        link.style.pointerEvents = 'none';
-      });
     }
 
     // Remove end screen elements

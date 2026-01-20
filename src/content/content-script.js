@@ -12,11 +12,14 @@ import { initGitHubNavigation } from './features/github-navigation.js';
 import { initGitHubChatbotUI } from './features/github-chatbot-ui.js';
 import { initLearningAgentUI } from './features/learning-agent-ui.js'; // Learning Agent with markdown support
 
+// Cross-browser API compatibility
+const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
+
 let activeFeatures = {};
 let currentToggles = {};
 
 // Load initial toggle state
-chrome.storage.sync.get(['toggles'], (result) => {
+browserAPI.storage.sync.get(['toggles'], (result) => {
   console.log('Loaded storage data:', result);
   if (result.toggles) {
     currentToggles = result.toggles;
@@ -27,8 +30,32 @@ chrome.storage.sync.get(['toggles'], (result) => {
   }
 });
 
-// Listen for toggle updates
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+// Listen for storage changes
+browserAPI.storage.onChanged.addListener((changes, namespace) => {
+  if (namespace === 'sync' && changes.toggles) {
+    const newToggles = changes.toggles.newValue || {};
+    const oldToggles = changes.toggles.oldValue || {};
+    
+    currentToggles = newToggles;
+    
+    // Handle changed toggles
+    Object.keys(newToggles).forEach(key => {
+      if (newToggles[key] !== oldToggles[key]) {
+        handleFeatureToggle(key, newToggles[key]);
+      }
+    });
+    
+    // Handle removed toggles
+    Object.keys(oldToggles).forEach(key => {
+      if (!(key in newToggles) && oldToggles[key]) {
+        handleFeatureToggle(key, false);
+      }
+    });
+  }
+});
+
+// Listen for toggle updates from background
+browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'TOGGLE_UPDATE') {
     console.log('Toggle update:', message.key, '=', message.value);
     currentToggles[message.key] = message.value;

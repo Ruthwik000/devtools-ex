@@ -75,15 +75,15 @@ export function initSpeedImprover() {
   panel.innerHTML = `
     <div id="speed-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; cursor: move; user-select: none; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">
       <div style="display: flex; align-items: center; gap: 8px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2">
+        <svg id="speed-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>
           <polyline points="12 6 12 12 16 14"/>
         </svg>
-        <div style="font-weight: 600; font-size: 14px; color: #E5E7EB;">Video Speed Control</div>
+        <div id="speed-title" style="font-weight: 600; font-size: 14px; color: #E5E7EB;">Video Speed Control</div>
       </div>
       <div style="display: flex; align-items: center; gap: 6px;">
         <button id="collapse-speed-panel" title="Minimize" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 16px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">–</button>
-        <button id="reset-speed-btn" title="Reset to 1x" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 14px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">
+        <button id="reset-speed-btn" title="Reset to 1x" class="header-btn-collapsible" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 14px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
             <path d="M21 3v5h-5"/>
@@ -91,8 +91,8 @@ export function initSpeedImprover() {
             <path d="M3 21v-5h5"/>
           </svg>
         </button>
-        <button id="help-speed-btn" title="Help" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 13px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">?</button>
-        <button id="close-speed-panel" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 18px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">×</button>
+        <button id="help-speed-btn" title="Help" class="header-btn-collapsible" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 13px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">?</button>
+        <button id="close-speed-panel" class="header-btn-collapsible" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 18px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">×</button>
       </div>
     </div>
 
@@ -253,16 +253,60 @@ export function initSpeedImprover() {
   function updateCollapsedState() {
     if (!body || !collapseBtn) return;
 
+    const title = document.getElementById('speed-title');
+    const collapsibleButtons = document.querySelectorAll('.header-btn-collapsible');
+    const header = document.getElementById('speed-header');
+
     if (isCollapsed) {
       body.style.display = 'none';
-      panel.style.minHeight = '64px';
-      panel.style.height = 'auto';
+      panel.style.minHeight = '50px';
+      panel.style.height = '50px';
+      panel.style.width = '50px';
+      panel.style.minWidth = '50px';
+      panel.style.borderRadius = '50%';
+      panel.style.padding = '0';
+      panel.style.cursor = 'move';
+      
+      // Hide resize handle when minimized
+      resizeHandle.style.display = 'none';
+      
+      // Hide title and other buttons
+      if (title) title.style.display = 'none';
+      collapsibleButtons.forEach(btn => btn.style.display = 'none');
+      
+      // Update header styling
+      header.style.marginBottom = '0';
+      header.style.paddingBottom = '0';
+      header.style.borderBottom = 'none';
+      header.style.justifyContent = 'center';
+      header.style.cursor = 'move';
+      
       collapseBtn.textContent = '+';
       collapseBtn.title = 'Expand';
     } else {
       body.style.display = 'flex';
       panel.style.minHeight = '180px';
       panel.style.height = '';
+      panel.style.width = '320px';
+      panel.style.minWidth = '280px';
+      panel.style.borderRadius = '12px';
+      panel.style.padding = '14px';
+      panel.style.cursor = 'default';
+      
+      // Show resize handle when expanded
+      resizeHandle.style.display = 'block';
+      
+      // Show title and other buttons
+      if (title) title.style.display = 'block';
+      collapsibleButtons.forEach(btn => btn.style.display = 'flex');
+      
+      // Restore header styling
+      header.style.marginBottom = '14px';
+      header.style.paddingBottom = '12px';
+      header.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
+      header.style.justifyContent = 'space-between';
+      header.style.cursor = 'move';
+      
       collapseBtn.textContent = '–';
       collapseBtn.title = 'Minimize';
     }
@@ -392,7 +436,13 @@ export function initSpeedImprover() {
   const header = document.getElementById('speed-header');
   
   function handleDragStart(e) {
-    if (e.target.closest('button')) return;
+    // When minimized, allow dragging from anywhere on the panel
+    if (isCollapsed) {
+      if (e.target.closest('#collapse-speed-panel')) return;
+    } else {
+      // When expanded, only drag from header (not buttons)
+      if (e.target.closest('button')) return;
+    }
     
     isDragging = true;
     dragStartX = e.clientX;
@@ -406,11 +456,22 @@ export function initSpeedImprover() {
     panel.style.left = panelStartX + 'px';
     panel.style.top = panelStartY + 'px';
     
-    header.style.cursor = 'grabbing';
+    if (isCollapsed) {
+      panel.style.cursor = 'grabbing';
+    } else {
+      header.style.cursor = 'grabbing';
+    }
     e.preventDefault();
   }
 
   header.addEventListener('mousedown', handleDragStart);
+  
+  // Add drag handler to entire panel when minimized
+  panel.addEventListener('mousedown', (e) => {
+    if (isCollapsed) {
+      handleDragStart(e);
+    }
+  });
 
   // Make panel resizable
   function handleResizeStart(e) {
@@ -467,7 +528,11 @@ export function initSpeedImprover() {
   function handleMouseUp() {
     if (isDragging) {
       isDragging = false;
-      header.style.cursor = 'move';
+      if (isCollapsed) {
+        panel.style.cursor = 'move';
+      } else {
+        header.style.cursor = 'move';
+      }
     }
     if (isResizing) {
       isResizing = false;
@@ -476,10 +541,15 @@ export function initSpeedImprover() {
 
   document.addEventListener('mouseup', handleMouseUp);
 
-  // Close panel
+  // Close panel - turn off toggle
   document.getElementById('close-speed-panel').addEventListener('click', () => {
     teardown();
-    browserAPI.storage.sync.set({ speedImprover: false });
+    // Turn off the toggle in popup
+    browserAPI.storage.sync.get(['toggles'], (result) => {
+      const toggles = result.toggles || {};
+      toggles.speedImprover = false;
+      browserAPI.storage.sync.set({ toggles });
+    });
   });
 
   // Hover effects for header buttons

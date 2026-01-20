@@ -34,16 +34,14 @@ export function initLearningAgentUI() {
     chatWindow.innerHTML = `
       <div class="chat-header">
         <div class="chat-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-          </svg>
+          <img src="${browserAPI.runtime.getURL('logos/learning-agent-logo.png')}" alt="Learning Agent" style="width: 24px; height: 24px; object-fit: cover; flex-shrink: 0; border-radius: 50%; background: linear-gradient(135deg, #1F2937 0%, #111827 100%); overflow: hidden;">
           <span>Learning Assistant</span>
         </div>
         <div class="chat-controls">
           <button class="chat-btn" id="learning-settings-btn" title="Settings">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
-              <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319z"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
             </svg>
           </button>
           <button class="chat-btn collapse-btn" title="Collapse">
@@ -61,7 +59,7 @@ export function initLearningAgentUI() {
       <div class="chat-body">
         <div class="chat-messages" id="learning-chat-messages"></div>
         <div class="chat-input-area">
-          <textarea id="learning-chat-input" placeholder="Ask about this page..." rows="2"></textarea>
+          <textarea id="learning-chat-input" placeholder="Ask about this page..." rows="1"></textarea>
           <button id="learning-chat-send" class="send-btn">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
@@ -119,8 +117,8 @@ export function initLearningAgentUI() {
         justify-content: space-between;
         align-items: center;
         padding: 16px 20px;
-        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
-        border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+        background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
+        border-bottom: 1px solid rgba(55, 65, 81, 0.3);
         cursor: move;
         user-select: none;
         border-radius: 16px 16px 0 0;
@@ -144,8 +142,10 @@ export function initLearningAgentUI() {
         overflow: hidden;
       }
 
-      #learning-agent-chatbot .chat-title svg {
+      #learning-agent-chatbot .chat-title img {
         flex-shrink: 0;
+        border-radius: 50%;
+        overflow: hidden;
       }
 
       #learning-agent-chatbot .chat-controls {
@@ -254,7 +254,7 @@ export function initLearningAgentUI() {
       }
 
       #learning-agent-chatbot .message.user {
-        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        background: linear-gradient(135deg, #374151 0%, #1F2937 100%);
         color: white;
         align-self: flex-end;
         margin-left: auto;
@@ -284,7 +284,9 @@ export function initLearningAgentUI() {
 
       #learning-agent-chatbot .chat-input-area {
         display: flex;
-        gap: 12px;
+        gap: 8px;
+        align-items: center;
+        padding: 12px 16px;
         padding: 16px;
         border-top: 1px solid #374151;
         background: #111827;
@@ -299,17 +301,18 @@ export function initLearningAgentUI() {
         flex: 1;
         background: #1F2937;
         border: 2px solid #374151;
-        border-radius: 10px;
-        padding: 12px 16px;
+        border-radius: 20px;
+        padding: 10px 16px;
         color: #E5E7EB;
         font-size: 14px;
         font-family: inherit;
-        resize: vertical;
+        resize: none;
         outline: none;
         transition: all 0.2s;
-        min-height: 44px;
-        max-height: 120px;
+        min-height: 40px;
+        max-height: 40px;
         line-height: 1.5;
+        overflow-y: hidden;
       }
 
       #learning-agent-chatbot #learning-chat-input:focus {
@@ -323,25 +326,25 @@ export function initLearningAgentUI() {
       }
 
       #learning-agent-chatbot .send-btn {
-        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        background: linear-gradient(135deg, #374151 0%, #1F2937 100%);
         border: none;
-        border-radius: 10px;
-        padding: 12px 16px;
-        min-width: 56px;
-        height: 44px;
+        border-radius: 50%;
+        padding: 0;
+        width: 40px;
+        height: 40px;
         color: white;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.2s;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         flex-shrink: 0;
       }
 
       #learning-agent-chatbot .send-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
       }
 
       #learning-agent-chatbot .send-btn:disabled {
@@ -392,7 +395,7 @@ export function initLearningAgentUI() {
       }
 
       #learning-agent-chatbot .api-key-setup input:focus {
-        border-color: #8b5cf6;
+        border-color: #3B82F6;
       }
 
       #learning-agent-chatbot .api-key-setup input::placeholder {
@@ -401,19 +404,21 @@ export function initLearningAgentUI() {
 
       #learning-agent-chatbot .api-key-setup button {
         width: 100%;
-        background: #8b5cf6;
+        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
         border: none;
         border-radius: 6px;
         padding: 10px 16px;
         color: white;
         font-size: 13px;
         cursor: pointer;
-        transition: background 0.2s;
+        transition: all 0.2s;
         font-weight: 600;
       }
 
       #learning-agent-chatbot .api-key-setup button:hover {
-        background: #7c3aed;
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
       }
 
       #learning-agent-chatbot .api-key-setup .info {
@@ -423,13 +428,14 @@ export function initLearningAgentUI() {
       }
 
       #learning-agent-chatbot .api-key-setup .info a {
-        color: #8b5cf6;
+        color: #3B82F6;
         text-decoration: none;
         font-weight: 600;
       }
 
       #learning-agent-chatbot .api-key-setup .info a:hover {
-        color: #7c3aed;
+        color: #2563EB;
+        text-decoration: underline;
       }
     `;
     document.head.appendChild(style);
@@ -479,9 +485,6 @@ export function initLearningAgentUI() {
     } else if (messages.length === 0) {
       messagesContainer.innerHTML = `
         <div class="empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-          </svg>
           <p><strong>Ask me anything about this page!</strong></p>
           <p style="font-size: 11px; margin-top: 4px;">I can help you understand content, summarize articles, explain concepts, and more.</p>
         </div>
@@ -678,10 +681,31 @@ export function initLearningAgentUI() {
       chatWindow.remove();
       chatWindow = null;
     }
+    if (healingInterval) {
+      clearInterval(healingInterval);
+    }
+  }
+
+  // Self-healing: Ensure UI exists and is in the DOM
+  function ensureUIExists() {
+    // Check if chatWindow exists in DOM
+    const existingWindow = document.getElementById('learning-agent-chatbot');
+
+    if (!existingWindow && document.body) {
+      console.log('Learning Agent UI missing - recreating...');
+      createChatWindow();
+      console.log('Learning Agent UI restored');
+    } else if (existingWindow && !chatWindow) {
+      // Window exists but we lost reference
+      chatWindow = existingWindow;
+    }
   }
 
   // Create the window
   createChatWindow();
+
+  // Self-healing interval - check every 2 seconds if UI exists
+  const healingInterval = setInterval(ensureUIExists, 2000);
 
   return {
     cleanup: cleanup

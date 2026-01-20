@@ -3499,22 +3499,7 @@ function initFocusMode() {
     return { cleanup: () => { } };
   }
 
-  // Check if Focus Mode is enabled via persistent storage
-  const focusModeEnabled = localStorage.getItem('focusModeEnabled');
-
-  // If Focus Mode is explicitly disabled, don't initialize anything
-  if (focusModeEnabled === 'false') {
-    console.log('Focus Mode is disabled - not initializing');
-    return { cleanup: () => { } };
-  }
-
-  // If this is first run or Focus Mode was enabled, initialize it
-  // Default to enabled on first run (focusModeEnabled === null)
-  if (focusModeEnabled === null) {
-    localStorage.setItem('focusModeEnabled', 'true');
-  }
-
-  console.log('Focus Mode initialized and enabled for YouTube');
+  console.log('Focus Mode initialized for YouTube');
 
   // Feature toggle states
   let extensionEnabled = true;
@@ -3569,6 +3554,18 @@ function initFocusMode() {
       min-height: 280px;
     }
 
+    .focus-mode-panel .resize-handle {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 20px;
+      height: 20px;
+      cursor: nwse-resize;
+      background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.1) 50%);
+      border-radius: 0 0 12px 0;
+      z-index: 10;
+    }
+
     .focus-mode-header {
       background: linear-gradient(135deg, #374151 0%, #1F2937 100%);
       padding: 14px 16px;
@@ -3584,11 +3581,18 @@ function initFocusMode() {
       width: 28px;
       height: 28px;
       background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-      border-radius: 6px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      overflow: hidden;
+    }
+    
+    .focus-mode-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     .focus-mode-title {
@@ -3646,14 +3650,24 @@ function initFocusMode() {
       min-width: 48px;
       min-height: 48px;
       border-radius: 24px;
-      cursor: pointer;
+      cursor: move;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      resize: none;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+
+    .focus-mode-panel.minimized .resize-handle {
+      display: none;
     }
 
     .focus-mode-panel.minimized .focus-mode-header {
       padding: 0;
       justify-content: center;
       border: none;
+      cursor: move;
+      background: transparent;
     }
 
     .focus-mode-panel.minimized .focus-mode-title,
@@ -3665,14 +3679,19 @@ function initFocusMode() {
     }
 
     .focus-mode-panel.minimized .focus-mode-logo {
-      width: 32px;
-      height: 32px;
-      margin: 8px;
+      width: 48px;
+      height: 48px;
+      margin: 0;
+      border-radius: 50%;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
     .focus-mode-panel.minimized:hover {
       transform: scale(1.1);
-      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+    }
+    
+    .focus-mode-panel.minimized:hover .focus-mode-logo {
+      box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
     }
 
     .focus-mode-content {
@@ -3787,33 +3806,39 @@ function initFocusMode() {
     }
 
     /* Block Shorts - Hide all shorts content */
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-reel-shelf-renderer,
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-rich-shelf-renderer[is-shorts],
-    body:not(.focus-mode-disabled).focus-mode-block-shorts [is-shorts],
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-guide-entry-renderer:has([title="Shorts"]),
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-mini-guide-entry-renderer:has([aria-label="Shorts"]),
-    body:not(.focus-mode-disabled).focus-mode-block-shorts a[href^="/shorts"],
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-rich-item-renderer:has(a[href^="/shorts"]),
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-video-renderer:has(a[href^="/shorts"]),
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-grid-video-renderer:has(a[href^="/shorts"]),
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-compact-video-renderer:has(a[href^="/shorts"]),
-    body:not(.focus-mode-disabled).focus-mode-block-shorts #shorts-container,
-    body:not(.focus-mode-disabled).focus-mode-block-shorts ytd-reel-video-renderer {
+    body.focus-mode-block-shorts ytd-reel-shelf-renderer,
+    body.focus-mode-block-shorts ytd-rich-shelf-renderer[is-shorts],
+    body.focus-mode-block-shorts [is-shorts],
+    body.focus-mode-block-shorts ytd-guide-entry-renderer:has([title="Shorts"]),
+    body.focus-mode-block-shorts ytd-mini-guide-entry-renderer:has([aria-label="Shorts"]),
+    body.focus-mode-block-shorts a[href^="/shorts"],
+    body.focus-mode-block-shorts ytd-rich-item-renderer:has(a[href^="/shorts"]),
+    body.focus-mode-block-shorts ytd-video-renderer:has(a[href^="/shorts"]),
+    body.focus-mode-block-shorts ytd-grid-video-renderer:has(a[href^="/shorts"]),
+    body.focus-mode-block-shorts ytd-compact-video-renderer:has(a[href^="/shorts"]),
+    body.focus-mode-block-shorts #shorts-container,
+    body.focus-mode-block-shorts ytd-reel-video-renderer {
       display: none !important;
     }
 
     /* Hide Shorts tab in channel pages */
-    body:not(.focus-mode-disabled).focus-mode-block-shorts tp-yt-paper-tab:has([tab-title="Shorts"]),
-    body:not(.focus-mode-disabled).focus-mode-block-shorts yt-tab-shape:has([tab-title="Shorts"]) {
+    body.focus-mode-block-shorts tp-yt-paper-tab:has([tab-title="Shorts"]),
+    body.focus-mode-block-shorts yt-tab-shape:has([tab-title="Shorts"]) {
       display: none !important;
     }
 
     /* Block navigation to Shorts */
-    body:not(.focus-mode-disabled).focus-mode-block-shorts [href*="/shorts/"],
-    body:not(.focus-mode-disabled).focus-mode-block-shorts [href*="youtube.com/shorts"] {
+    body.focus-mode-block-shorts [href*="/shorts/"],
+    body.focus-mode-block-shorts [href*="youtube.com/shorts"] {
       pointer-events: none !important;
       opacity: 0 !important;
       display: none !important;
+    }
+    
+    /* When shorts blocking is disabled, ensure shorts are visible */
+    body:not(.focus-mode-block-shorts) ytd-guide-entry-renderer:has([title="Shorts"]),
+    body:not(.focus-mode-block-shorts) ytd-mini-guide-entry-renderer:has([aria-label="Shorts"]) {
+      display: block !important;
     }
 
     /* Hide end screen recommendations */
@@ -3848,9 +3873,7 @@ function initFocusMode() {
     newPanel.innerHTML = `
       <div class="focus-mode-header">
         <div class="focus-mode-logo">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-          </svg>
+          <img src="${browserAPI.runtime.getURL('logos/youtube-focus-logo.png')}" alt="YouTube Focus" style="width: 100%; height: 100%; object-fit: contain;">
         </div>
         <div class="focus-mode-title">YouTube Focus Mode</div>
         <button class="focus-mode-minimize" title="Minimize panel">−</button>
@@ -3882,9 +3905,8 @@ function initFocusMode() {
           </div>
         </div>
       </div>
-      <div class="focus-mode-footer">
-        <a href="https://github.com/makaroni4/focused_youtube" target="_blank">Source code</a>
-      </div>
+     
+      <div class="resize-handle"></div>
     `;
 
     // Apply initial UI state (minimized or expanded only)
@@ -3899,14 +3921,22 @@ function initFocusMode() {
   function setupPanelEvents(panelElement) {
     const headerElement = panelElement.querySelector('.focus-mode-header');
 
-    // Make panel draggable
+    // Make panel draggable from header
     headerElement.addEventListener('mousedown', dragStart);
+    
+    // Make entire panel draggable when minimized
+    panelElement.addEventListener('mousedown', (e) => {
+      if (panelElement.classList.contains('minimized')) {
+        dragStart(e);
+      }
+    });
 
     // Click to expand when minimized
     panelElement.addEventListener('click', (e) => {
-      if (panelElement.classList.contains('minimized') && !e.target.closest('.focus-mode-close')) {
+      if (panelElement.classList.contains('minimized') && !e.target.closest('.focus-mode-close') && !isDragging) {
         panelElement.classList.remove('minimized');
         isMinimized = false;
+        panelElement.style.cursor = 'default';
         saveUIState();
       }
     });
@@ -3917,6 +3947,7 @@ function initFocusMode() {
       minimizeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         panelElement.classList.add('minimized');
+        panelElement.style.cursor = 'move';
         isMinimized = true;
         saveUIState();
       });
@@ -3924,9 +3955,6 @@ function initFocusMode() {
 
     // Close button - disables Focus Mode entirely
     panelElement.querySelector('.focus-mode-close').addEventListener('click', () => {
-      // Completely disable Focus Mode
-      localStorage.setItem('focusModeEnabled', 'false');
-
       // Remove the panel
       panelElement.remove();
 
@@ -3941,12 +3969,19 @@ function initFocusMode() {
         'focus-mode-block-shorts'
       );
 
-      console.log('Focus Mode disabled by user');
+      console.log('Focus Mode panel closed');
 
       // Stop the healing interval
       if (healingInterval) {
         clearInterval(healingInterval);
       }
+      
+      // Turn off the toggle in popup
+      browserAPI.storage.sync.get(['toggles'], (result) => {
+        const toggles = result.toggles || {};
+        toggles.focusMode = false;
+        browserAPI.storage.sync.set({ toggles });
+      });
     });
 
     // Toggle switches
@@ -3979,13 +4014,6 @@ function initFocusMode() {
 
   // Self-healing: Ensure UI exists and is in the DOM
   function ensureUIExists() {
-    // Check if Focus Mode is still enabled
-    const currentEnabled = localStorage.getItem('focusModeEnabled');
-    if (currentEnabled === 'false') {
-      // User disabled it, don't recreate
-      return;
-    }
-
     // Check if panel exists in DOM
     const existingPanel = document.getElementById('focus-mode-panel-unique-id');
 
@@ -4021,11 +4049,16 @@ function initFocusMode() {
   let currentX, currentY, initialX, initialY;
 
   function dragStart(e) {
-    // Don't drag when clicking on buttons or when minimized
+    // Don't drag when clicking on buttons
     if (e.target.closest('.focus-mode-close') || e.target.closest('.focus-mode-minimize')) return;
-    if (panel && panel.classList.contains('minimized')) return;
-
+    
+    // When minimized, allow dragging from anywhere except close button
+    // When expanded, only drag from header
     if (!panel) return;
+    
+    const isMinimizedNow = panel.classList.contains('minimized');
+    if (!isMinimizedNow && !e.target.closest('.focus-mode-header')) return;
+
     initialX = e.clientX - panel.offsetLeft;
     initialY = e.clientY - panel.offsetTop;
     isDragging = true;
@@ -4044,7 +4077,10 @@ function initFocusMode() {
 
   function dragEnd() {
     isDragging = false;
-    if (panel) panel.style.cursor = 'default';
+    if (panel) {
+      const isMinimizedNow = panel.classList.contains('minimized');
+      panel.style.cursor = isMinimizedNow ? 'move' : 'default';
+    }
   }
 
   // Setup global drag listeners
@@ -4133,38 +4169,13 @@ function initFocusMode() {
   function removeDistractingElements() {
     if (!extensionEnabled) return;
 
-    // Block Shorts if enabled
+    // Block Shorts if enabled - only redirect, don't remove elements
     if (blockShorts) {
       // Redirect if on shorts page
       if (window.location.pathname.includes('/shorts/')) {
         window.location.href = 'https://www.youtube.com/';
         return;
       }
-
-      // Remove all shorts elements
-      const shortsElements = document.querySelectorAll(`
-        ytd-reel-shelf-renderer,
-        ytd-rich-shelf-renderer[is-shorts],
-        [is-shorts],
-        ytd-guide-entry-renderer:has([title="Shorts"]),
-        ytd-mini-guide-entry-renderer:has([aria-label="Shorts"]),
-        a[href^="/shorts"],
-        ytd-rich-item-renderer:has(a[href^="/shorts"]),
-        ytd-video-renderer:has(a[href^="/shorts"]),
-        ytd-grid-video-renderer:has(a[href^="/shorts"]),
-        ytd-compact-video-renderer:has(a[href^="/shorts"]),
-        #shorts-container,
-        ytd-reel-video-renderer,
-        tp-yt-paper-tab:has([tab-title="Shorts"]),
-        yt-tab-shape:has([tab-title="Shorts"])
-      `);
-      shortsElements.forEach(el => el.remove());
-
-      // Block navigation to shorts
-      document.querySelectorAll('a[href*="/shorts/"], a[href*="youtube.com/shorts"]').forEach(link => {
-        link.style.display = 'none';
-        link.style.pointerEvents = 'none';
-      });
     }
 
     // Remove end screen elements
@@ -6247,15 +6258,15 @@ function initSpeedImprover() {
   panel.innerHTML = `
     <div id="speed-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; cursor: move; user-select: none; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">
       <div style="display: flex; align-items: center; gap: 8px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2">
+        <svg id="speed-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>
           <polyline points="12 6 12 12 16 14"/>
         </svg>
-        <div style="font-weight: 600; font-size: 14px; color: #E5E7EB;">Video Speed Control</div>
+        <div id="speed-title" style="font-weight: 600; font-size: 14px; color: #E5E7EB;">Video Speed Control</div>
       </div>
       <div style="display: flex; align-items: center; gap: 6px;">
         <button id="collapse-speed-panel" title="Minimize" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 16px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">–</button>
-        <button id="reset-speed-btn" title="Reset to 1x" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 14px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">
+        <button id="reset-speed-btn" title="Reset to 1x" class="header-btn-collapsible" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 14px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
             <path d="M21 3v5h-5"/>
@@ -6263,8 +6274,8 @@ function initSpeedImprover() {
             <path d="M3 21v-5h5"/>
           </svg>
         </button>
-        <button id="help-speed-btn" title="Help" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 13px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">?</button>
-        <button id="close-speed-panel" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 18px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">×</button>
+        <button id="help-speed-btn" title="Help" class="header-btn-collapsible" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 13px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">?</button>
+        <button id="close-speed-panel" class="header-btn-collapsible" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 18px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">×</button>
       </div>
     </div>
 
@@ -6425,16 +6436,60 @@ function initSpeedImprover() {
   function updateCollapsedState() {
     if (!body || !collapseBtn) return;
 
+    const title = document.getElementById('speed-title');
+    const collapsibleButtons = document.querySelectorAll('.header-btn-collapsible');
+    const header = document.getElementById('speed-header');
+
     if (isCollapsed) {
       body.style.display = 'none';
-      panel.style.minHeight = '64px';
-      panel.style.height = 'auto';
+      panel.style.minHeight = '50px';
+      panel.style.height = '50px';
+      panel.style.width = '50px';
+      panel.style.minWidth = '50px';
+      panel.style.borderRadius = '50%';
+      panel.style.padding = '0';
+      panel.style.cursor = 'move';
+      
+      // Hide resize handle when minimized
+      resizeHandle.style.display = 'none';
+      
+      // Hide title and other buttons
+      if (title) title.style.display = 'none';
+      collapsibleButtons.forEach(btn => btn.style.display = 'none');
+      
+      // Update header styling
+      header.style.marginBottom = '0';
+      header.style.paddingBottom = '0';
+      header.style.borderBottom = 'none';
+      header.style.justifyContent = 'center';
+      header.style.cursor = 'move';
+      
       collapseBtn.textContent = '+';
       collapseBtn.title = 'Expand';
     } else {
       body.style.display = 'flex';
       panel.style.minHeight = '180px';
       panel.style.height = '';
+      panel.style.width = '320px';
+      panel.style.minWidth = '280px';
+      panel.style.borderRadius = '12px';
+      panel.style.padding = '14px';
+      panel.style.cursor = 'default';
+      
+      // Show resize handle when expanded
+      resizeHandle.style.display = 'block';
+      
+      // Show title and other buttons
+      if (title) title.style.display = 'block';
+      collapsibleButtons.forEach(btn => btn.style.display = 'flex');
+      
+      // Restore header styling
+      header.style.marginBottom = '14px';
+      header.style.paddingBottom = '12px';
+      header.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
+      header.style.justifyContent = 'space-between';
+      header.style.cursor = 'move';
+      
       collapseBtn.textContent = '–';
       collapseBtn.title = 'Minimize';
     }
@@ -6564,7 +6619,13 @@ function initSpeedImprover() {
   const header = document.getElementById('speed-header');
   
   function handleDragStart(e) {
-    if (e.target.closest('button')) return;
+    // When minimized, allow dragging from anywhere on the panel
+    if (isCollapsed) {
+      if (e.target.closest('#collapse-speed-panel')) return;
+    } else {
+      // When expanded, only drag from header (not buttons)
+      if (e.target.closest('button')) return;
+    }
     
     isDragging = true;
     dragStartX = e.clientX;
@@ -6578,11 +6639,22 @@ function initSpeedImprover() {
     panel.style.left = panelStartX + 'px';
     panel.style.top = panelStartY + 'px';
     
-    header.style.cursor = 'grabbing';
+    if (isCollapsed) {
+      panel.style.cursor = 'grabbing';
+    } else {
+      header.style.cursor = 'grabbing';
+    }
     e.preventDefault();
   }
 
   header.addEventListener('mousedown', handleDragStart);
+  
+  // Add drag handler to entire panel when minimized
+  panel.addEventListener('mousedown', (e) => {
+    if (isCollapsed) {
+      handleDragStart(e);
+    }
+  });
 
   // Make panel resizable
   function handleResizeStart(e) {
@@ -6639,7 +6711,11 @@ function initSpeedImprover() {
   function handleMouseUp() {
     if (isDragging) {
       isDragging = false;
-      header.style.cursor = 'move';
+      if (isCollapsed) {
+        panel.style.cursor = 'move';
+      } else {
+        header.style.cursor = 'move';
+      }
     }
     if (isResizing) {
       isResizing = false;
@@ -6648,10 +6724,15 @@ function initSpeedImprover() {
 
   document.addEventListener('mouseup', handleMouseUp);
 
-  // Close panel
+  // Close panel - turn off toggle
   document.getElementById('close-speed-panel').addEventListener('click', () => {
     teardown();
-    browserAPI.storage.sync.set({ speedImprover: false });
+    // Turn off the toggle in popup
+    browserAPI.storage.sync.get(['toggles'], (result) => {
+      const toggles = result.toggles || {};
+      toggles.speedImprover = false;
+      browserAPI.storage.sync.set({ toggles });
+    });
   });
 
   // Hover effects for header buttons
@@ -7864,16 +7945,14 @@ function initLearningAgentUI() {
     chatWindow.innerHTML = `
       <div class="chat-header">
         <div class="chat-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-          </svg>
+          <img src="${browserAPI.runtime.getURL('logos/learning-agent-logo.png')}" alt="Learning Agent" style="width: 24px; height: 24px; object-fit: cover; flex-shrink: 0; border-radius: 50%; background: linear-gradient(135deg, #1F2937 0%, #111827 100%); overflow: hidden;">
           <span>Learning Assistant</span>
         </div>
         <div class="chat-controls">
           <button class="chat-btn" id="learning-settings-btn" title="Settings">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
-              <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319z"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
             </svg>
           </button>
           <button class="chat-btn collapse-btn" title="Collapse">
@@ -7891,7 +7970,7 @@ function initLearningAgentUI() {
       <div class="chat-body">
         <div class="chat-messages" id="learning-chat-messages"></div>
         <div class="chat-input-area">
-          <textarea id="learning-chat-input" placeholder="Ask about this page..." rows="2"></textarea>
+          <textarea id="learning-chat-input" placeholder="Ask about this page..." rows="1"></textarea>
           <button id="learning-chat-send" class="send-btn">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
@@ -7949,8 +8028,8 @@ function initLearningAgentUI() {
         justify-content: space-between;
         align-items: center;
         padding: 16px 20px;
-        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
-        border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+        background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
+        border-bottom: 1px solid rgba(55, 65, 81, 0.3);
         cursor: move;
         user-select: none;
         border-radius: 16px 16px 0 0;
@@ -7974,8 +8053,10 @@ function initLearningAgentUI() {
         overflow: hidden;
       }
 
-      #learning-agent-chatbot .chat-title svg {
+      #learning-agent-chatbot .chat-title img {
         flex-shrink: 0;
+        border-radius: 50%;
+        overflow: hidden;
       }
 
       #learning-agent-chatbot .chat-controls {
@@ -8084,7 +8165,7 @@ function initLearningAgentUI() {
       }
 
       #learning-agent-chatbot .message.user {
-        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        background: linear-gradient(135deg, #374151 0%, #1F2937 100%);
         color: white;
         align-self: flex-end;
         margin-left: auto;
@@ -8114,7 +8195,9 @@ function initLearningAgentUI() {
 
       #learning-agent-chatbot .chat-input-area {
         display: flex;
-        gap: 12px;
+        gap: 8px;
+        align-items: center;
+        padding: 12px 16px;
         padding: 16px;
         border-top: 1px solid #374151;
         background: #111827;
@@ -8129,17 +8212,18 @@ function initLearningAgentUI() {
         flex: 1;
         background: #1F2937;
         border: 2px solid #374151;
-        border-radius: 10px;
-        padding: 12px 16px;
+        border-radius: 20px;
+        padding: 10px 16px;
         color: #E5E7EB;
         font-size: 14px;
         font-family: inherit;
-        resize: vertical;
+        resize: none;
         outline: none;
         transition: all 0.2s;
-        min-height: 44px;
-        max-height: 120px;
+        min-height: 40px;
+        max-height: 40px;
         line-height: 1.5;
+        overflow-y: hidden;
       }
 
       #learning-agent-chatbot #learning-chat-input:focus {
@@ -8153,25 +8237,25 @@ function initLearningAgentUI() {
       }
 
       #learning-agent-chatbot .send-btn {
-        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        background: linear-gradient(135deg, #374151 0%, #1F2937 100%);
         border: none;
-        border-radius: 10px;
-        padding: 12px 16px;
-        min-width: 56px;
-        height: 44px;
+        border-radius: 50%;
+        padding: 0;
+        width: 40px;
+        height: 40px;
         color: white;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.2s;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         flex-shrink: 0;
       }
 
       #learning-agent-chatbot .send-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
       }
 
       #learning-agent-chatbot .send-btn:disabled {
@@ -8222,7 +8306,7 @@ function initLearningAgentUI() {
       }
 
       #learning-agent-chatbot .api-key-setup input:focus {
-        border-color: #8b5cf6;
+        border-color: #3B82F6;
       }
 
       #learning-agent-chatbot .api-key-setup input::placeholder {
@@ -8231,19 +8315,21 @@ function initLearningAgentUI() {
 
       #learning-agent-chatbot .api-key-setup button {
         width: 100%;
-        background: #8b5cf6;
+        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
         border: none;
         border-radius: 6px;
         padding: 10px 16px;
         color: white;
         font-size: 13px;
         cursor: pointer;
-        transition: background 0.2s;
+        transition: all 0.2s;
         font-weight: 600;
       }
 
       #learning-agent-chatbot .api-key-setup button:hover {
-        background: #7c3aed;
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
       }
 
       #learning-agent-chatbot .api-key-setup .info {
@@ -8253,13 +8339,14 @@ function initLearningAgentUI() {
       }
 
       #learning-agent-chatbot .api-key-setup .info a {
-        color: #8b5cf6;
+        color: #3B82F6;
         text-decoration: none;
         font-weight: 600;
       }
 
       #learning-agent-chatbot .api-key-setup .info a:hover {
-        color: #7c3aed;
+        color: #2563EB;
+        text-decoration: underline;
       }
     `;
     document.head.appendChild(style);
@@ -8309,9 +8396,6 @@ function initLearningAgentUI() {
     } else if (messages.length === 0) {
       messagesContainer.innerHTML = `
         <div class="empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-          </svg>
           <p><strong>Ask me anything about this page!</strong></p>
           <p style="font-size: 11px; margin-top: 4px;">I can help you understand content, summarize articles, explain concepts, and more.</p>
         </div>
@@ -8508,10 +8592,31 @@ function initLearningAgentUI() {
       chatWindow.remove();
       chatWindow = null;
     }
+    if (healingInterval) {
+      clearInterval(healingInterval);
+    }
+  }
+
+  // Self-healing: Ensure UI exists and is in the DOM
+  function ensureUIExists() {
+    // Check if chatWindow exists in DOM
+    const existingWindow = document.getElementById('learning-agent-chatbot');
+
+    if (!existingWindow && document.body) {
+      console.log('Learning Agent UI missing - recreating...');
+      createChatWindow();
+      console.log('Learning Agent UI restored');
+    } else if (existingWindow && !chatWindow) {
+      // Window exists but we lost reference
+      chatWindow = existingWindow;
+    }
   }
 
   // Create the window
   createChatWindow();
+
+  // Self-healing interval - check every 2 seconds if UI exists
+  const healingInterval = setInterval(ensureUIExists, 2000);
 
   return {
     cleanup: cleanup
