@@ -10,7 +10,7 @@ export function initFocusDetection() {
   let lastAlertTime = 0;
   const ALERT_COOLDOWN = 5000; // 5 seconds cooldown between alerts
   const DETECTION_INTERVAL = 2000; // 2 seconds
-  const CONFIDENCE_THRESHOLD = 0.6;
+  const CONFIDENCE_THRESHOLD = 0.45;
 
   // Initialize audio
   function initAudio() {
@@ -115,7 +115,7 @@ export function initFocusDetection() {
         </div>
 
         <div id="detection-info" style="font-size: 11px; color: #6B7280; text-align: center;">
-          Scanning every 2 seconds • Confidence threshold: 60%
+          Scanning every 2 seconds • Confidence threshold: 45%
         </div>
       </div>
     `;
@@ -352,13 +352,13 @@ export function initFocusDetection() {
         if (detectionInfo) {
           const highConfCount = predictions.filter(p => p.confidence >= CONFIDENCE_THRESHOLD).length;
           const lowConfCount = predictions.length - highConfCount;
-          detectionInfo.textContent = `Detected: ${highConfCount} high confidence${lowConfCount > 0 ? `, ${lowConfCount} low confidence` : ''} • Threshold: 60%`;
+          detectionInfo.textContent = `Detected: ${highConfCount} high confidence${lowConfCount > 0 ? `, ${lowConfCount} low confidence` : ''} • Threshold: 45%`;
         }
       } else {
         // Update detection info
         const detectionInfo = panel?.querySelector('#detection-info');
         if (detectionInfo) {
-          detectionInfo.textContent = 'Scanning every 2 seconds • Confidence threshold: 60%';
+          detectionInfo.textContent = 'Scanning every 2 seconds • Confidence threshold: 45%';
         }
       }
     };
