@@ -22,6 +22,17 @@ async function startCamera() {
   }
 }
 
+// Stop camera and release tracks
+function stopCamera() {
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+  }
+  if (video) {
+    video.srcObject = null;
+  }
+}
+
 // Capture frame
 function captureFrame() {
   if (video.videoWidth === 0) return null;
@@ -35,6 +46,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'captureFrame') {
     const imageData = captureFrame();
     sendResponse({ imageData });
+  }
+  if (request.action === 'stopCamera') {
+    stopCamera();
+    sendResponse({ stopped: true });
   }
   return true;
 });

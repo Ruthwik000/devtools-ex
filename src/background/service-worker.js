@@ -289,6 +289,7 @@ function stopDetection() {
     detectionInterval = null;
   }
 
+  chrome.runtime.sendMessage({ action: 'stopCamera' }).catch(() => { });
   chrome.offscreen.closeDocument().catch(() => { });
 
   console.log('Focus detection stopped');

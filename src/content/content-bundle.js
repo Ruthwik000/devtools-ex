@@ -3494,19 +3494,47 @@ function initCheckSEO() {
 // Focus Mode - Remove YouTube distractions for focused learning
 function initFocusMode() {
   const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
-  
+
   if (!window.location.hostname.includes('youtube.com')) {
-    return { cleanup: () => {} };
+    return { cleanup: () => { } };
   }
 
-  console.log('Focus Mode initialized for YouTube');
+  // Check if Focus Mode is enabled via persistent storage
+  const focusModeEnabled = localStorage.getItem('focusModeEnabled');
 
+  // If Focus Mode is explicitly disabled, don't initialize anything
+  if (focusModeEnabled === 'false') {
+    console.log('Focus Mode is disabled - not initializing');
+    return { cleanup: () => { } };
+  }
+
+  // If this is first run or Focus Mode was enabled, initialize it
+  // Default to enabled on first run (focusModeEnabled === null)
+  if (focusModeEnabled === null) {
+    localStorage.setItem('focusModeEnabled', 'true');
+  }
+
+  console.log('Focus Mode initialized and enabled for YouTube');
+
+  // Feature toggle states
   let extensionEnabled = true;
   let showComments = false;
   let showDescription = true;
   let blockShorts = true;
+  let isMinimized = false;
 
-  // Load saved preferences
+  // Load UI state (minimized or expanded)
+  const savedUIState = localStorage.getItem('focusModeUIState');
+  if (savedUIState) {
+    try {
+      const uiState = JSON.parse(savedUIState);
+      isMinimized = uiState.minimized || false;
+    } catch (e) {
+      console.error('Error parsing Focus Mode UI state:', e);
+    }
+  }
+
+  // Load saved feature preferences
   browserAPI.storage.sync.get(['focusModeSettings'], (result) => {
     if (result.focusModeSettings) {
       extensionEnabled = result.focusModeSettings.extensionEnabled !== false;
@@ -3570,6 +3598,27 @@ function initFocusMode() {
       color: #F9FAFB;
     }
 
+    .focus-mode-minimize {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: #9CA3AF;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      transition: all 0.2s;
+      font-weight: bold;
+    }
+
+    .focus-mode-minimize:hover {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3B82F6;
+    }
+
     .focus-mode-close {
       width: 28px;
       height: 28px;
@@ -3588,6 +3637,42 @@ function initFocusMode() {
     .focus-mode-close:hover {
       background: rgba(239, 68, 68, 0.1);
       color: #EF4444;
+    }
+
+    /* Minimized state */
+    .focus-mode-panel.minimized {
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      min-height: 48px;
+      border-radius: 24px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .focus-mode-panel.minimized .focus-mode-header {
+      padding: 0;
+      justify-content: center;
+      border: none;
+    }
+
+    .focus-mode-panel.minimized .focus-mode-title,
+    .focus-mode-panel.minimized .focus-mode-minimize,
+    .focus-mode-panel.minimized .focus-mode-close,
+    .focus-mode-panel.minimized .focus-mode-content,
+    .focus-mode-panel.minimized .focus-mode-footer {
+      display: none;
+    }
+
+    .focus-mode-panel.minimized .focus-mode-logo {
+      width: 32px;
+      height: 32px;
+      margin: 8px;
+    }
+
+    .focus-mode-panel.minimized:hover {
+      transform: scale(1.1);
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
     }
 
     .focus-mode-content {
@@ -3751,62 +3836,196 @@ function initFocusMode() {
   `;
   document.head.appendChild(style);
 
-  // Create focus mode control panel
-  const panel = document.createElement('div');
-  panel.className = 'focus-mode-panel';
-  panel.innerHTML = `
-    <div class="focus-mode-header">
-      <div class="focus-mode-logo">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-        </svg>
-      </div>
-      <div class="focus-mode-title">YouTube Focus Mode</div>
-      <button class="focus-mode-close" title="Close panel">×</button>
-    </div>
-    <div class="focus-mode-content">
-      <div class="focus-mode-toggle-row">
-        <div class="focus-mode-toggle-label">Extension enabled</div>
-        <div class="focus-mode-toggle-switch ${extensionEnabled ? 'active' : ''}" data-toggle="extension">
-          <div class="focus-mode-toggle-knob"></div>
-        </div>
-      </div>
-      <div class="focus-mode-toggle-row">
-        <div class="focus-mode-toggle-label">Comments</div>
-        <div class="focus-mode-toggle-switch ${showComments ? 'active' : ''}" data-toggle="comments">
-          <div class="focus-mode-toggle-knob"></div>
-        </div>
-      </div>
-      <div class="focus-mode-toggle-row">
-        <div class="focus-mode-toggle-label">Description</div>
-        <div class="focus-mode-toggle-switch ${showDescription ? 'active' : ''}" data-toggle="description">
-          <div class="focus-mode-toggle-knob"></div>
-        </div>
-      </div>
-      <div class="focus-mode-toggle-row">
-        <div class="focus-mode-toggle-label">Block Shorts</div>
-        <div class="focus-mode-toggle-switch ${blockShorts ? 'active' : ''}" data-toggle="shorts">
-          <div class="focus-mode-toggle-knob"></div>
-        </div>
-      </div>
-    </div>
-    <div class="focus-mode-footer">
-      <a href="https://github.com/makaroni4/focused_youtube" target="_blank">Source code</a>
-    </div>
-  `;
-  document.body.appendChild(panel);
+  // Panel reference (will be created by ensureUIExists)
+  let panel = null;
+  let header = null;
 
-  // Make panel draggable
+  // Function to create the focus mode control panel
+  function createPanel() {
+    const newPanel = document.createElement('div');
+    newPanel.className = 'focus-mode-panel';
+    newPanel.id = 'focus-mode-panel-unique-id'; // Unique ID to detect existence
+    newPanel.innerHTML = `
+      <div class="focus-mode-header">
+        <div class="focus-mode-logo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+          </svg>
+        </div>
+        <div class="focus-mode-title">YouTube Focus Mode</div>
+        <button class="focus-mode-minimize" title="Minimize panel">−</button>
+        <button class="focus-mode-close" title="Close panel">×</button>
+      </div>
+      <div class="focus-mode-content">
+        <div class="focus-mode-toggle-row">
+          <div class="focus-mode-toggle-label">Extension enabled</div>
+          <div class="focus-mode-toggle-switch ${extensionEnabled ? 'active' : ''}" data-toggle="extension">
+            <div class="focus-mode-toggle-knob"></div>
+          </div>
+        </div>
+        <div class="focus-mode-toggle-row">
+          <div class="focus-mode-toggle-label">Comments</div>
+          <div class="focus-mode-toggle-switch ${showComments ? 'active' : ''}" data-toggle="comments">
+            <div class="focus-mode-toggle-knob"></div>
+          </div>
+        </div>
+        <div class="focus-mode-toggle-row">
+          <div class="focus-mode-toggle-label">Description</div>
+          <div class="focus-mode-toggle-switch ${showDescription ? 'active' : ''}" data-toggle="description">
+            <div class="focus-mode-toggle-knob"></div>
+          </div>
+        </div>
+        <div class="focus-mode-toggle-row">
+          <div class="focus-mode-toggle-label">Block Shorts</div>
+          <div class="focus-mode-toggle-switch ${blockShorts ? 'active' : ''}" data-toggle="shorts">
+            <div class="focus-mode-toggle-knob"></div>
+          </div>
+        </div>
+      </div>
+      <div class="focus-mode-footer">
+        <a href="https://github.com/makaroni4/focused_youtube" target="_blank">Source code</a>
+      </div>
+    `;
+
+    // Apply initial UI state (minimized or expanded only)
+    if (isMinimized) {
+      newPanel.classList.add('minimized');
+    }
+
+    return newPanel;
+  }
+
+  // Function to setup event listeners on the panel
+  function setupPanelEvents(panelElement) {
+    const headerElement = panelElement.querySelector('.focus-mode-header');
+
+    // Make panel draggable
+    headerElement.addEventListener('mousedown', dragStart);
+
+    // Click to expand when minimized
+    panelElement.addEventListener('click', (e) => {
+      if (panelElement.classList.contains('minimized') && !e.target.closest('.focus-mode-close')) {
+        panelElement.classList.remove('minimized');
+        isMinimized = false;
+        saveUIState();
+      }
+    });
+
+    // Minimize button
+    const minimizeBtn = panelElement.querySelector('.focus-mode-minimize');
+    if (minimizeBtn) {
+      minimizeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        panelElement.classList.add('minimized');
+        isMinimized = true;
+        saveUIState();
+      });
+    }
+
+    // Close button - disables Focus Mode entirely
+    panelElement.querySelector('.focus-mode-close').addEventListener('click', () => {
+      // Completely disable Focus Mode
+      localStorage.setItem('focusModeEnabled', 'false');
+
+      // Remove the panel
+      panelElement.remove();
+
+      // Clean up styles and classes
+      const styleEl = document.getElementById('focus-mode-style');
+      if (styleEl) styleEl.remove();
+
+      document.body.classList.remove(
+        'focus-mode-disabled',
+        'focus-mode-show-comments',
+        'focus-mode-hide-description',
+        'focus-mode-block-shorts'
+      );
+
+      console.log('Focus Mode disabled by user');
+
+      // Stop the healing interval
+      if (healingInterval) {
+        clearInterval(healingInterval);
+      }
+    });
+
+    // Toggle switches
+    panelElement.querySelectorAll('.focus-mode-toggle-switch').forEach(toggle => {
+      toggle.addEventListener('click', () => {
+        const type = toggle.dataset.toggle;
+        const isActive = toggle.classList.contains('active');
+
+        if (type === 'extension') {
+          extensionEnabled = !isActive;
+          toggle.classList.toggle('active');
+        } else if (type === 'comments') {
+          showComments = !isActive;
+          toggle.classList.toggle('active');
+        } else if (type === 'description') {
+          showDescription = !isActive;
+          toggle.classList.toggle('active');
+        } else if (type === 'shorts') {
+          blockShorts = !isActive;
+          toggle.classList.toggle('active');
+        }
+
+        applyFocusMode();
+        saveSettings();
+      });
+    });
+
+    return headerElement;
+  }
+
+  // Self-healing: Ensure UI exists and is in the DOM
+  function ensureUIExists() {
+    // Check if Focus Mode is still enabled
+    const currentEnabled = localStorage.getItem('focusModeEnabled');
+    if (currentEnabled === 'false') {
+      // User disabled it, don't recreate
+      return;
+    }
+
+    // Check if panel exists in DOM
+    const existingPanel = document.getElementById('focus-mode-panel-unique-id');
+
+    if (!existingPanel && document.body) {
+      console.log('Focus Mode UI missing - recreating...');
+
+      // Create new panel
+      panel = createPanel();
+      document.body.appendChild(panel);
+
+      // Setup all event listeners
+      header = setupPanelEvents(panel);
+
+      // Update panel UI to match current state
+      updatePanelUI();
+
+      console.log('Focus Mode UI restored');
+    } else if (existingPanel && !panel) {
+      // Panel exists but we lost reference (page navigation)
+      panel = existingPanel;
+      header = panel.querySelector('.focus-mode-header');
+    }
+  }
+
+  // Initial UI creation
+  ensureUIExists();
+
+  // Self-healing interval - check every 2 seconds if UI exists
+  const healingInterval = setInterval(ensureUIExists, 2000);
+
+  // Make panel draggable - these functions are used by setupPanelEvents
   let isDragging = false;
   let currentX, currentY, initialX, initialY;
 
-  const header = panel.querySelector('.focus-mode-header');
-  header.addEventListener('mousedown', dragStart);
-  document.addEventListener('mousemove', drag);
-  document.addEventListener('mouseup', dragEnd);
-
   function dragStart(e) {
-    if (e.target.closest('.focus-mode-close')) return;
+    // Don't drag when clicking on buttons or when minimized
+    if (e.target.closest('.focus-mode-close') || e.target.closest('.focus-mode-minimize')) return;
+    if (panel && panel.classList.contains('minimized')) return;
+
+    if (!panel) return;
     initialX = e.clientX - panel.offsetLeft;
     initialY = e.clientY - panel.offsetTop;
     isDragging = true;
@@ -3814,7 +4033,7 @@ function initFocusMode() {
   }
 
   function drag(e) {
-    if (!isDragging) return;
+    if (!isDragging || !panel) return;
     e.preventDefault();
     currentX = e.clientX - initialX;
     currentY = e.clientY - initialY;
@@ -3825,42 +4044,24 @@ function initFocusMode() {
 
   function dragEnd() {
     isDragging = false;
-    panel.style.cursor = 'default';
+    if (panel) panel.style.cursor = 'default';
   }
 
-  // Close button
-  panel.querySelector('.focus-mode-close').addEventListener('click', () => {
-    panel.remove();
-    browserAPI.storage.sync.set({ focusMode: false });
-  });
+  // Setup global drag listeners
+  document.addEventListener('mousemove', drag);
+  document.addEventListener('mouseup', dragEnd);
 
-  // Toggle switches
-  panel.querySelectorAll('.focus-mode-toggle-switch').forEach(toggle => {
-    toggle.addEventListener('click', () => {
-      const type = toggle.dataset.toggle;
-      const isActive = toggle.classList.contains('active');
-      
-      if (type === 'extension') {
-        extensionEnabled = !isActive;
-        toggle.classList.toggle('active');
-      } else if (type === 'comments') {
-        showComments = !isActive;
-        toggle.classList.toggle('active');
-      } else if (type === 'description') {
-        showDescription = !isActive;
-        toggle.classList.toggle('active');
-      } else if (type === 'shorts') {
-        blockShorts = !isActive;
-        toggle.classList.toggle('active');
-      }
-
-      applyFocusMode();
-      saveSettings();
-    });
-  });
+  // Save UI state to localStorage (only minimized state, not visibility)
+  function saveUIState() {
+    localStorage.setItem('focusModeUIState', JSON.stringify({
+      minimized: isMinimized
+    }));
+  }
 
   // Update panel UI
   function updatePanelUI() {
+    if (!panel) return;
+
     const extensionToggle = panel.querySelector('[data-toggle="extension"]');
     const commentsToggle = panel.querySelector('[data-toggle="comments"]');
     const descriptionToggle = panel.querySelector('[data-toggle="description"]');
@@ -3994,10 +4195,12 @@ function initFocusMode() {
   });
 
   // Listen for YouTube navigation
-  document.addEventListener('yt-navigate-finish', () => {
+  const handleNavigateFinish = () => {
     applyFocusMode();
     removeDistractingElements();
-  });
+  };
+
+  document.addEventListener('yt-navigate-finish', handleNavigateFinish);
 
   // Run on load
   applyFocusMode();
@@ -4007,10 +4210,21 @@ function initFocusMode() {
   return {
     cleanup: () => {
       style.remove();
-      panel.remove();
+      if (panel) panel.remove();
       clearInterval(cleanupInterval);
+      clearInterval(healingInterval); // Stop self-healing
       observer.disconnect();
-      document.body.classList.remove('focus-mode-disabled', 'focus-mode-show-comments', 'focus-mode-hide-description', 'focus-mode-no-infinite-scroll');
+      document.removeEventListener('mousemove', drag);
+      document.removeEventListener('mouseup', dragEnd);
+      if (header) header.removeEventListener('mousedown', dragStart);
+      document.removeEventListener('yt-navigate-finish', handleNavigateFinish);
+      document.body.classList.remove(
+        'focus-mode-disabled',
+        'focus-mode-show-comments',
+        'focus-mode-hide-description',
+        'focus-mode-block-shorts',
+        'focus-mode-no-infinite-scroll'
+      );
       console.log('Focus Mode disabled');
     }
   };
@@ -5964,6 +6178,10 @@ function initSpeedImprover() {
   let currentSpeed = 1;
   let video = null;
   let videoCheckInterval = null;
+  let rateChangeHandler = null;
+  let resetWatcher = null;
+  let isCollapsed = false;
+  const COLLAPSE_KEY = 'speedControlCollapsed';
 
   // Dragging state
   let isDragging = false;
@@ -6036,6 +6254,7 @@ function initSpeedImprover() {
         <div style="font-weight: 600; font-size: 14px; color: #E5E7EB;">Video Speed Control</div>
       </div>
       <div style="display: flex; align-items: center; gap: 6px;">
+        <button id="collapse-speed-panel" title="Minimize" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 16px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">–</button>
         <button id="reset-speed-btn" title="Reset to 1x" style="background: rgba(255,255,255,0.1); border: none; color: #9CA3AF; cursor: pointer; font-size: 14px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 5px; transition: all 0.2s;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
@@ -6049,84 +6268,89 @@ function initSpeedImprover() {
       </div>
     </div>
 
-    <!-- Speed Slider -->
-    <div style="margin-bottom: 16px;">
-      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-        <button id="decrease-speed-btn" style="width: 36px; height: 36px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #E5E7EB; font-size: 18px; font-weight: 300; transition: all 0.2s; flex-shrink: 0;">−</button>
-        
-        <div style="flex: 1; position: relative;">
-          <input type="range" id="speed-slider" min="0.25" max="16" step="0.25" value="1" style="width: 100%; height: 6px; background: linear-gradient(to right, #3B82F6 0%, #3B82F6 6.25%, #4B5563 6.25%, #4B5563 100%); border-radius: 3px; outline: none; -webkit-appearance: none; cursor: pointer;">
-          <style>
-            #speed-slider::-webkit-slider-thumb {
-              -webkit-appearance: none;
-              appearance: none;
-              width: 16px;
-              height: 16px;
-              background: #60A5FA;
-              border: 2px solid #1E293B;
-              border-radius: 50%;
-              cursor: grab;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            }
-            #speed-slider::-webkit-slider-thumb:active {
-              cursor: grabbing;
-              transform: scale(1.1);
-            }
-            #speed-slider::-moz-range-thumb {
-              width: 16px;
-              height: 16px;
-              background: #60A5FA;
-              border: 2px solid #1E293B;
-              border-radius: 50%;
-              cursor: grab;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            }
-          </style>
-        </div>
-        
-        <button id="increase-speed-btn" style="width: 36px; height: 36px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #E5E7EB; font-size: 18px; font-weight: 300; transition: all 0.2s; flex-shrink: 0;">+</button>
-      </div>
-    </div>
-
-    <!-- Current Speed Display -->
-    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <div style="font-size: 11px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.3px;">Current playback rate</div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <div style="font-size: 10px; color: #6B7280;">×</div>
-          <input type="number" id="speed-input" min="0.25" max="16" step="0.25" value="1" style="width: 60px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #E5E7EB; padding: 6px 8px; border-radius: 6px; font-size: 14px; font-weight: 600; text-align: center; outline: none;">
-          <button id="apply-speed-btn" style="background: linear-gradient(135deg, #3B82F6, #2563EB); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 4px;">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polygon points="5 3 19 12 5 21 5 3"/>
-            </svg>
-            Apply
-          </button>
+    <div id="speed-body" style="display: flex; flex-direction: column; gap: 14px; flex: 1;">
+      <!-- Speed Slider -->
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+          <button id="decrease-speed-btn" style="width: 36px; height: 36px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #E5E7EB; font-size: 18px; font-weight: 300; transition: all 0.2s; flex-shrink: 0;">−</button>
+          
+          <div style="flex: 1; position: relative;">
+            <input type="range" id="speed-slider" min="0.25" max="16" step="0.25" value="1" style="width: 100%; height: 6px; background: linear-gradient(to right, #3B82F6 0%, #3B82F6 6.25%, #4B5563 6.25%, #4B5563 100%); border-radius: 3px; outline: none; -webkit-appearance: none; cursor: pointer;">
+            <style>
+              #speed-slider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 16px;
+                height: 16px;
+                background: #60A5FA;
+                border: 2px solid #1E293B;
+                border-radius: 50%;
+                cursor: grab;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              }
+              #speed-slider::-webkit-slider-thumb:active {
+                cursor: grabbing;
+                transform: scale(1.1);
+              }
+              #speed-slider::-moz-range-thumb {
+                width: 16px;
+                height: 16px;
+                background: #60A5FA;
+                border: 2px solid #1E293B;
+                border-radius: 50%;
+                cursor: grab;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              }
+            </style>
+          </div>
+          
+          <button id="increase-speed-btn" style="width: 36px; height: 36px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #E5E7EB; font-size: 18px; font-weight: 300; transition: all 0.2s; flex-shrink: 0;">+</button>
         </div>
       </div>
-    </div>
 
-    <!-- Quick Presets -->
-    <div style="margin-bottom: 12px;">
-      <div style="font-size: 10px; color: #9CA3AF; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px;">Quick Presets</div>
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
-        <button class="preset-btn" data-speed="0.5" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">0.5×</button>
-        <button class="preset-btn" data-speed="1" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">1×</button>
-        <button class="preset-btn" data-speed="1.5" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">1.5×</button>
-        <button class="preset-btn" data-speed="2" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">2×</button>
-        <button class="preset-btn" data-speed="2.5" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">2.5×</button>
-        <button class="preset-btn" data-speed="3" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">3×</button>
-        <button class="preset-btn" data-speed="4" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">4×</button>
-        <button class="preset-btn" data-speed="8" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">8×</button>
+      <!-- Current Speed Display -->
+      <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="font-size: 11px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.3px;">Current playback rate</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="font-size: 10px; color: #6B7280;">×</div>
+            <input type="number" id="speed-input" min="0.25" max="16" step="0.25" value="1" style="width: 60px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #E5E7EB; padding: 6px 8px; border-radius: 6px; font-size: 14px; font-weight: 600; text-align: center; outline: none;">
+            <button id="apply-speed-btn" style="background: linear-gradient(135deg, #3B82F6, #2563EB); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 4px;">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              Apply
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- Video Status -->
-    <div id="video-status" style="font-size: 9px; color: #6B7280; text-align: center; padding: 6px; background: rgba(255,255,255,0.03); border-radius: 5px;">
-      Searching for video...
+      <!-- Quick Presets -->
+      <div>
+        <div style="font-size: 10px; color: #9CA3AF; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px;">Quick Presets</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+          <button class="preset-btn" data-speed="0.5" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">0.5×</button>
+          <button class="preset-btn" data-speed="1" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">1×</button>
+          <button class="preset-btn" data-speed="1.5" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">1.5×</button>
+          <button class="preset-btn" data-speed="2" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">2×</button>
+          <button class="preset-btn" data-speed="2.5" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">2.5×</button>
+          <button class="preset-btn" data-speed="3" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">3×</button>
+          <button class="preset-btn" data-speed="4" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">4×</button>
+          <button class="preset-btn" data-speed="8" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #E5E7EB; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">8×</button>
+        </div>
+      </div>
+
+      <!-- Video Status -->
+      <div id="video-status" style="font-size: 9px; color: #6B7280; text-align: center; padding: 6px; background: rgba(255,255,255,0.03); border-radius: 5px;">
+        Searching for video...
+      </div>
     </div>
   `;
 
   document.body.appendChild(panel);
+
+  const body = document.getElementById('speed-body');
+  const collapseBtn = document.getElementById('collapse-speed-panel');
 
   // Add resize handle
   const resizeHandle = document.createElement('div');
@@ -6146,27 +6370,45 @@ function initSpeedImprover() {
 
   // Find and monitor video
   function updateVideo() {
-    video = findVideo();
+    const nextVideo = findVideo();
     const statusEl = document.getElementById('video-status');
     
+    if (nextVideo !== video) {
+      detachRateChangeListener();
+      video = nextVideo;
+      bindRateChangeListener();
+    }
+
     if (video) {
       statusEl.textContent = `Video found: ${video.videoWidth}×${video.videoHeight}`;
       statusEl.style.color = '#10B981';
       
       // Apply current speed
       video.playbackRate = currentSpeed;
-      
-      // Listen for speed changes from native controls
-      video.addEventListener('ratechange', () => {
-        if (Math.abs(video.playbackRate - currentSpeed) > 0.01) {
-          currentSpeed = video.playbackRate;
-          updateUI();
-        }
-      });
     } else {
       statusEl.textContent = 'No video found on page';
       statusEl.style.color = '#EF4444';
     }
+  }
+
+  function bindRateChangeListener() {
+    if (!video) return;
+
+    rateChangeHandler = () => {
+      if (Math.abs(video.playbackRate - currentSpeed) > 0.01) {
+        currentSpeed = video.playbackRate;
+        updateUI();
+      }
+    };
+
+    video.addEventListener('ratechange', rateChangeHandler);
+  }
+
+  function detachRateChangeListener() {
+    if (video && rateChangeHandler) {
+      video.removeEventListener('ratechange', rateChangeHandler);
+    }
+    rateChangeHandler = null;
   }
 
   // Update UI elements
@@ -6180,6 +6422,37 @@ function initSpeedImprover() {
     slider.style.background = `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${percentage}%, #4B5563 ${percentage}%, #4B5563 100%)`;
   }
 
+  function updateCollapsedState() {
+    if (!body || !collapseBtn) return;
+
+    if (isCollapsed) {
+      body.style.display = 'none';
+      panel.style.minHeight = '64px';
+      panel.style.height = 'auto';
+      collapseBtn.textContent = '+';
+      collapseBtn.title = 'Expand';
+    } else {
+      body.style.display = 'flex';
+      panel.style.minHeight = '180px';
+      panel.style.height = '';
+      collapseBtn.textContent = '–';
+      collapseBtn.title = 'Minimize';
+    }
+  }
+
+  function toggleCollapse() {
+    isCollapsed = !isCollapsed;
+    updateCollapsedState();
+    browserAPI.storage.local.set({ [COLLAPSE_KEY]: isCollapsed });
+  }
+
+  browserAPI.storage.local.get([COLLAPSE_KEY], (result) => {
+    if (typeof result[COLLAPSE_KEY] === 'boolean') {
+      isCollapsed = result[COLLAPSE_KEY];
+    }
+    updateCollapsedState();
+  });
+
   // Set speed
   function setSpeed(speed) {
     speed = Math.max(0.25, Math.min(16, speed));
@@ -6190,6 +6463,28 @@ function initSpeedImprover() {
     }
     
     updateUI();
+  }
+
+  function resetPlaybackRateForAllVideos() {
+    document.querySelectorAll('video').forEach(v => {
+      if (v.playbackRate !== 1) {
+        v.playbackRate = 1;
+      }
+    });
+  }
+
+  function stopResetWatcher() {
+    if (resetWatcher) {
+      clearInterval(resetWatcher);
+      resetWatcher = null;
+    }
+  }
+
+  function startResetWatcher() {
+    resetPlaybackRateForAllVideos();
+    stopResetWatcher();
+    resetWatcher = setInterval(resetPlaybackRateForAllVideos, 1000);
+    setTimeout(stopResetWatcher, 5000);
   }
 
   // Check for video periodically
@@ -6203,6 +6498,8 @@ function initSpeedImprover() {
   slider.addEventListener('input', (e) => {
     setSpeed(parseFloat(e.target.value));
   });
+
+  collapseBtn.addEventListener('click', toggleCollapse);
 
   // Decrease button
   document.getElementById('decrease-speed-btn').addEventListener('click', () => {
@@ -6266,7 +6563,7 @@ function initSpeedImprover() {
   // Make panel draggable
   const header = document.getElementById('speed-header');
   
-  header.addEventListener('mousedown', (e) => {
+  function handleDragStart(e) {
     if (e.target.closest('button')) return;
     
     isDragging = true;
@@ -6283,10 +6580,12 @@ function initSpeedImprover() {
     
     header.style.cursor = 'grabbing';
     e.preventDefault();
-  });
+  }
+
+  header.addEventListener('mousedown', handleDragStart);
 
   // Make panel resizable
-  resizeHandle.addEventListener('mousedown', (e) => {
+  function handleResizeStart(e) {
     isResizing = true;
     resizeStartX = e.clientX;
     resizeStartY = e.clientY;
@@ -6296,10 +6595,12 @@ function initSpeedImprover() {
     
     e.preventDefault();
     e.stopPropagation();
-  });
+  }
+
+  resizeHandle.addEventListener('mousedown', handleResizeStart);
 
   // Mouse move handler
-  document.addEventListener('mousemove', (e) => {
+  function handleMouseMove(e) {
     if (isDragging) {
       const deltaX = e.clientX - dragStartX;
       const deltaY = e.clientY - dragStartY;
@@ -6330,10 +6631,12 @@ function initSpeedImprover() {
       panel.style.width = newWidth + 'px';
       panel.style.height = newHeight + 'px';
     }
-  });
+  }
+
+  document.addEventListener('mousemove', handleMouseMove);
 
   // Mouse up handler
-  document.addEventListener('mouseup', () => {
+  function handleMouseUp() {
     if (isDragging) {
       isDragging = false;
       header.style.cursor = 'move';
@@ -6341,17 +6644,19 @@ function initSpeedImprover() {
     if (isResizing) {
       isResizing = false;
     }
-  });
+  }
+
+  document.addEventListener('mouseup', handleMouseUp);
 
   // Close panel
   document.getElementById('close-speed-panel').addEventListener('click', () => {
-    panel.remove();
-    clearInterval(videoCheckInterval);
+    teardown();
     browserAPI.storage.sync.set({ speedImprover: false });
   });
 
   // Hover effects for header buttons
   const headerButtons = [
+    'collapse-speed-panel',
     'reset-speed-btn',
     'help-speed-btn',
     'close-speed-panel'
@@ -6395,16 +6700,30 @@ function initSpeedImprover() {
     applyBtn.style.boxShadow = 'none';
   });
 
+  function teardown() {
+    if (panel && panel.parentNode) {
+      panel.remove();
+    }
+    clearInterval(videoCheckInterval);
+    videoCheckInterval = null;
+    stopResetWatcher();
+    detachRateChangeListener();
+    currentSpeed = 1;
+    startResetWatcher();
+    video = null;
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+    resizeHandle.removeEventListener('mousedown', handleResizeStart);
+    header.removeEventListener('mousedown', handleDragStart);
+    collapseBtn.removeEventListener('click', toggleCollapse);
+    console.log('Video Speed Control disabled');
+  }
+
   console.log('Video Speed Control initialized');
 
   return {
     cleanup: () => {
-      panel.remove();
-      clearInterval(videoCheckInterval);
-      if (video) {
-        video.playbackRate = 1;
-      }
-      console.log('Video Speed Control disabled');
+      teardown();
     }
   };
 }
