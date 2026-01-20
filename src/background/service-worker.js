@@ -256,6 +256,7 @@ async function startDetection() {
       reasons: ['USER_MEDIA'],
       justification: 'Camera access for mobile phone detection'
     });
+    console.log('Offscreen document created - camera permission will be requested');
   } catch (error) {
     if (!error.message.includes('Only a single offscreen')) {
       console.error('Error creating offscreen document:', error);
@@ -263,7 +264,26 @@ async function startDetection() {
   }
 
   // Wait for camera to initialize
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  // Send initial frame to show camera is working
+  try {
+    const initialFrame = await chrome.runtime.sendMessage({ action: 'captureFrame' });
+    if (initialFrame && initialFrame.imageData) {
+      console.log('Initial frame captured, sending to content script');
+      const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          action: 'detectionUpdate',
+          predictions: [],
+          highConfidencePredictions: [],
+          imageData: initialFrame.imageData
+        }).catch(err => console.log('Could not send initial frame:', err));
+      }
+    }
+  } catch (error) {
+    console.error('Error capturing initial frame:', error);
+  }
 
   // Start detection loop
   detectionInterval = setInterval(async () => {
@@ -308,15 +328,38 @@ async function detectMobilePhone(imageBase64) {
     const data = await response.json();
     console.log('API Response:', data);
 
-    if (data.predictions && data.predictions.length > 0) {
-      // Send message to content script to play alert sound
+    // Filter predictions by confidence threshold (only alert if confidence > 60%)
+    const CONFIDENCE_THRESHOLD = 0.6;
+    const highConfidencePredictions = data.predictions?.filter(
+      pred => pred.confidence >= CONFIDENCE_THRESHOLD
+    ) || [];
+
+    console.log(`Filtered predictions: ${highConfidencePredictions.length} out of ${data.predictions?.length || 0} (threshold: ${CONFIDENCE_THRESHOLD})`);
+
+    // Always send predictions to content script for visualization (even low confidence)
+    try {
+      const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          action: 'detectionUpdate',
+          predictions: data.predictions || [],
+          highConfidencePredictions: highConfidencePredictions,
+          imageData: imageBase64
+        }).catch(err => console.log('Could not send to tab:', err));
+      }
+    } catch (error) {
+      console.error('Error sending detection message:', error);
+    }
+
+    // Only trigger alerts for high-confidence detections
+    if (highConfidencePredictions.length > 0) {
+      // Send alert to content script
       try {
         const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
         if (tabs[0]) {
-          // Send message to content script instead of showing blocking alert
           chrome.tabs.sendMessage(tabs[0].id, {
             action: 'phoneDetected',
-            predictions: data.predictions
+            predictions: highConfidencePredictions
           }).catch(err => console.log('Could not send to tab:', err));
         }
       } catch (error) {
@@ -328,13 +371,13 @@ async function detectMobilePhone(imageBase64) {
         type: 'basic',
         iconUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
         title: 'Focus Alert!',
-        message: `${data.predictions.length} mobile phone(s) detected!`
+        message: `${highConfidencePredictions.length} mobile phone(s) detected! (${Math.round(highConfidencePredictions[0].confidence * 100)}% confidence)`
       });
 
       // Notify popup if open
       chrome.runtime.sendMessage({
         action: 'detectionResult',
-        predictions: data.predictions
+        predictions: highConfidencePredictions
       }).catch(() => { });
     }
   } catch (error) {
