@@ -4254,6 +4254,7 @@ function initFocusDetection() {
   let alertAudio = null;
   let lastAlertTime = 0;
   let currentPredictions = []; // Store current predictions for drawing
+  let isMinimized = false;
   const ALERT_COOLDOWN = 5000; // 5 seconds cooldown between alerts
   const DETECTION_INTERVAL = 2000; // 2 seconds
   const CONFIDENCE_THRESHOLD = 0.45;
@@ -4310,6 +4311,13 @@ function initFocusDetection() {
 
   // Create floating status panel with video feed and bounding boxes
   function createPanel() {
+    // Wait for body to exist
+    if (!document.body) {
+      console.log('Waiting for document.body...');
+      setTimeout(createPanel, 100);
+      return;
+    }
+
     panel = document.createElement('div');
     panel.id = 'focus-detection-panel';
     panel.style.cssText = `
@@ -4333,8 +4341,11 @@ function initFocusDetection() {
         }
       </style>
       <div id="focus-header" style="background: linear-gradient(135deg, #374151 0%, #1F2937 100%); padding: 12px 16px; cursor: move; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #374151; user-select: none;">
-        <h2 style="margin: 0; font-size: 14px; font-weight: 600; color: #F9FAFB;">Focus Detection</h2>
-        <button id="close-focus-panel" style="background: transparent; border: none; color: #9CA3AF; cursor: pointer; font-size: 20px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s;">×</button>
+        <h2 id="focus-title" style="margin: 0; font-size: 14px; font-weight: 600; color: #F9FAFB;">Focus Detection</h2>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button id="minimize-focus-panel" title="Minimize" style="background: transparent; border: none; color: #9CA3AF; cursor: pointer; font-size: 20px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s; font-weight: bold;">−</button>
+          <button id="close-focus-panel" style="background: transparent; border: none; color: #9CA3AF; cursor: pointer; font-size: 20px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s;">×</button>
+        </div>
       </div>
 
       <div style="padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 12px;">
@@ -4351,13 +4362,6 @@ function initFocusDetection() {
               <div style="font-size: 12px;">Requesting Camera Access...</div>
             </div>
           </div>
-        </div>
-
-        <div id="status-indicator" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; background: #10B981; border-radius: 8px; transition: all 0.3s;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-          <span style="font-size: 16px; font-weight: 600; color: white;">Focused</span>
         </div>
 
         <div id="detection-info" style="font-size: 11px; color: #6B7280; text-align: center;">
@@ -4571,30 +4575,99 @@ function initFocusDetection() {
     }
   }
 
+  // Show alert overlay on screen
+  function showAlertOverlay() {
+    // Wait for body to exist
+    if (!document.body) {
+      console.log('Waiting for document.body to show overlay...');
+      setTimeout(showAlertOverlay, 100);
+      return;
+    }
+
+    // Check if overlay already exists
+    let overlay = document.getElementById('focus-detection-alert-overlay');
+    if (overlay) {
+      // Reset animation
+      overlay.style.animation = 'none';
+      setTimeout(() => {
+        overlay.style.animation = 'fadeInOut 4s ease-in-out';
+      }, 10);
+      return;
+    }
+
+    // Create overlay
+    overlay = document.createElement('div');
+    overlay.id = 'focus-detection-alert-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+      color: white;
+      padding: 32px 48px;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(239, 68, 68, 0.6);
+      z-index: 999999999;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      text-align: center;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      animation: fadeInOut 4s ease-in-out;
+      pointer-events: none;
+    `;
+
+    overlay.innerHTML = `
+      <style>
+        @keyframes fadeInOut {
+          0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+          15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+          85% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+          100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+          20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+      </style>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: shake 0.5s ease-in-out;">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <div style="font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">Phone Detected!</div>
+        <div style="font-size: 18px; font-weight: 500; opacity: 0.95;">Focus back on your work 💪</div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Remove overlay after animation
+    setTimeout(() => {
+      if (overlay && overlay.parentNode) {
+        overlay.remove();
+      }
+    }, 4000);
+  }
+
   // Update status indicator
   function updateStatus(isFocused) {
-    const indicator = panel?.querySelector('#status-indicator');
-    if (!indicator) return;
-
-    if (isFocused) {
-      indicator.style.background = '#10B981';
-      indicator.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-        <span style="font-size: 16px; font-weight: 600; color: white;">Focused</span>
-      `;
-    } else {
-      indicator.style.background = '#EF4444';
-      indicator.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-          <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-        </svg>
-        <span style="font-size: 16px; font-weight: 600; color: white;">Phone Detected!</span>
-      `;
-      
+    // When phone is detected, play alert sound and show overlay
+    if (!isFocused) {
+      console.log('📱 Phone detected! Broadcasting to all tabs...');
       playAlert();
-      indicator.style.animation = 'pulse 0.5s ease-in-out 3';
+      showAlertOverlay();
+      
+      // Broadcast alert to all tabs via background script
+      browserAPI.runtime.sendMessage({
+        type: 'PHONE_DETECTED',
+        timestamp: Date.now()
+      }).then(response => {
+        console.log('✅ Phone detection message sent successfully:', response);
+      }).catch(error => {
+        console.error('❌ Failed to send phone detection message:', error);
+      });
     }
   }
 
@@ -4618,28 +4691,142 @@ function initFocusDetection() {
 
   // Attach event listeners
   function attachEventListeners() {
-    // Close button - turn off toggle
-    panel.querySelector('#close-focus-panel').addEventListener('click', () => {
-      stopDetection();
-      panel.remove();
-      // Turn off the toggle in popup
-      browserAPI.storage.sync.get(['toggles'], (result) => {
-        const toggles = result.toggles || {};
-        toggles.focusDetection = false;
-        browserAPI.storage.sync.set({ toggles });
+    // Minimize button
+    const minimizeBtn = panel.querySelector('#minimize-focus-panel');
+    if (minimizeBtn) {
+      minimizeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMinimize();
       });
-    });
 
-    // Close button hover
+      // Minimize button hover
+      minimizeBtn.addEventListener('mouseenter', () => {
+        minimizeBtn.style.background = 'rgba(59, 130, 246, 0.1)';
+        minimizeBtn.style.color = '#3B82F6';
+      });
+      minimizeBtn.addEventListener('mouseleave', () => {
+        minimizeBtn.style.background = 'transparent';
+        minimizeBtn.style.color = '#9CA3AF';
+      });
+    }
+
+    // Close button - turn off toggle
     const closeBtn = panel.querySelector('#close-focus-panel');
-    closeBtn.addEventListener('mouseenter', () => {
-      closeBtn.style.background = 'rgba(239, 68, 68, 0.1)';
-      closeBtn.style.color = '#EF4444';
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        stopDetection();
+        panel.remove();
+        // Turn off the toggle in popup
+        browserAPI.storage.sync.get(['toggles'], (result) => {
+          const toggles = result.toggles || {};
+          toggles.focusDetection = false;
+          browserAPI.storage.sync.set({ toggles });
+        });
+      });
+
+      // Close button hover
+      closeBtn.addEventListener('mouseenter', () => {
+        closeBtn.style.background = 'rgba(239, 68, 68, 0.1)';
+        closeBtn.style.color = '#EF4444';
+      });
+      closeBtn.addEventListener('mouseleave', () => {
+        closeBtn.style.background = 'transparent';
+        closeBtn.style.color = '#9CA3AF';
+      });
+    }
+
+    // Click to expand when minimized
+    panel.addEventListener('click', (e) => {
+      if (isMinimized && !e.target.closest('#close-focus-panel') && !isDraggingPanel) {
+        toggleMinimize();
+      }
     });
-    closeBtn.addEventListener('mouseleave', () => {
-      closeBtn.style.background = 'transparent';
-      closeBtn.style.color = '#9CA3AF';
-    });
+  }
+
+  // Toggle minimize state
+  function toggleMinimize() {
+    isMinimized = !isMinimized;
+    updateMinimizedState();
+  }
+
+  // Update minimized state
+  function updateMinimizedState() {
+    const body = panel.querySelector('div[style*="padding: 16px"]');
+    const title = panel.querySelector('#focus-title');
+    const minimizeBtn = panel.querySelector('#minimize-focus-panel');
+    const closeBtn = panel.querySelector('#close-focus-panel');
+    const header = panel.querySelector('#focus-header');
+
+    if (isMinimized) {
+      // Hide body content
+      if (body) body.style.display = 'none';
+      
+      // Minimize panel to circular icon
+      panel.style.width = '48px';
+      panel.style.height = '48px';
+      panel.style.minWidth = '48px';
+      panel.style.minHeight = '48px';
+      panel.style.borderRadius = '50%';
+      panel.style.padding = '0';
+      panel.style.cursor = 'move';
+      panel.style.background = 'linear-gradient(135deg, #374151 0%, #1F2937 100%)';
+      
+      // Update header
+      header.style.padding = '0';
+      header.style.marginBottom = '0';
+      header.style.borderBottom = 'none';
+      header.style.justifyContent = 'center';
+      header.style.cursor = 'move';
+      header.style.height = '48px';
+      header.style.background = 'transparent';
+      
+      // Hide title and buttons
+      if (title) title.style.display = 'none';
+      if (minimizeBtn) minimizeBtn.style.display = 'none';
+      if (closeBtn) closeBtn.style.display = 'none';
+      
+      // Add camera icon
+      header.innerHTML = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      `;
+    } else {
+      // Restore full panel
+      if (body) body.style.display = 'flex';
+      
+      panel.style.width = '420px';
+      panel.style.height = '';
+      panel.style.minWidth = '420px';
+      panel.style.minHeight = '400px';
+      panel.style.borderRadius = '16px';
+      panel.style.padding = '0';
+      panel.style.cursor = 'default';
+      panel.style.background = 'linear-gradient(135deg, #1F2937 0%, #111827 100%)';
+      
+      // Restore header
+      header.style.padding = '12px 16px';
+      header.style.marginBottom = '0';
+      header.style.borderBottom = '1px solid #374151';
+      header.style.justifyContent = 'space-between';
+      header.style.cursor = 'move';
+      header.style.height = '';
+      header.style.background = 'linear-gradient(135deg, #374151 0%, #1F2937 100%)';
+      
+      // Restore header content
+      header.innerHTML = `
+        <h2 id="focus-title" style="margin: 0; font-size: 14px; font-weight: 600; color: #F9FAFB;">Focus Detection</h2>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button id="minimize-focus-panel" title="Minimize" style="background: transparent; border: none; color: #9CA3AF; cursor: pointer; font-size: 20px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s; font-weight: bold;">−</button>
+          <button id="close-focus-panel" style="background: transparent; border: none; color: #9CA3AF; cursor: pointer; font-size: 20px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s;">×</button>
+        </div>
+      `;
+      
+      // Reattach event listeners
+      attachEventListeners();
+    }
   }
 
   // Stop detection
@@ -4664,35 +4851,61 @@ function initFocusDetection() {
   }
 
   // Make panel draggable
+  let isDraggingPanel = false;
+  let dragStartX, dragStartY, dragStartLeft, dragStartTop;
+
   function makeDraggable() {
     const header = panel.querySelector('#focus-header');
-    let isDragging = false;
-    let startX, startY, startLeft, startTop;
 
-    header.addEventListener('mousedown', (e) => {
-      if (e.target.id === 'close-focus-panel' || e.target.closest('#close-focus-panel')) return;
-      isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
+    function handleDragStart(e) {
+      // When minimized, allow dragging from anywhere on the panel
+      if (isMinimized) {
+        if (e.target.closest('#close-focus-panel')) return;
+      } else {
+        // When expanded, only drag from header (not buttons)
+        if (e.target.closest('button')) return;
+      }
+
+      isDraggingPanel = true;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
       const rect = panel.getBoundingClientRect();
-      startLeft = rect.left;
-      startTop = rect.top;
-      header.style.cursor = 'grabbing';
+      dragStartLeft = rect.left;
+      dragStartTop = rect.top;
+      
+      if (isMinimized) {
+        panel.style.cursor = 'grabbing';
+      } else {
+        header.style.cursor = 'grabbing';
+      }
+    }
+
+    header.addEventListener('mousedown', handleDragStart);
+    
+    // Add drag handler to entire panel when minimized
+    panel.addEventListener('mousedown', (e) => {
+      if (isMinimized) {
+        handleDragStart(e);
+      }
     });
 
     document.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      panel.style.left = (startLeft + dx) + 'px';
-      panel.style.top = (startTop + dy) + 'px';
+      if (!isDraggingPanel) return;
+      const dx = e.clientX - dragStartX;
+      const dy = e.clientY - dragStartY;
+      panel.style.left = (dragStartLeft + dx) + 'px';
+      panel.style.top = (dragStartTop + dy) + 'px';
       panel.style.right = 'auto';
     });
 
     document.addEventListener('mouseup', () => {
-      if (isDragging) {
-        isDragging = false;
-        header.style.cursor = 'move';
+      if (isDraggingPanel) {
+        isDraggingPanel = false;
+        if (isMinimized) {
+          panel.style.cursor = 'move';
+        } else {
+          header.style.cursor = 'move';
+        }
       }
     });
   }

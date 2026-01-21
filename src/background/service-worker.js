@@ -35,6 +35,45 @@ chrome.runtime.onStartup.addListener(async () => {
 
 // Listen for toggle changes
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Phone Detection Broadcast - Forward to all tabs
+  if (message.type === 'PHONE_DETECTED') {
+    console.log('📱 Background: Broadcasting phone detection alert to all tabs');
+    
+    // Send alert to ALL tabs
+    chrome.tabs.query({}, (tabs) => {
+      console.log(`📡 Broadcasting to ${tabs.length} tabs`);
+      let successCount = 0;
+      let errorCount = 0;
+      
+      tabs.forEach(tab => {
+        // Skip restricted urls
+        if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('edge://')) {
+          console.log(`⏭️ Skipping restricted tab ${tab.id}: ${tab.url}`);
+          return;
+        }
+        
+        console.log(`📤 Sending to tab ${tab.id}: ${tab.url}`);
+        chrome.tabs.sendMessage(tab.id, {
+          type: 'PHONE_DETECTED',
+          timestamp: message.timestamp
+        }).then(response => {
+          successCount++;
+          console.log(`✅ Tab ${tab.id} received alert:`, response);
+        }).catch(error => {
+          errorCount++;
+          console.log(`❌ Tab ${tab.id} failed:`, error.message);
+        });
+      });
+      
+      setTimeout(() => {
+        console.log(`📊 Broadcast complete: ${successCount} success, ${errorCount} errors`);
+      }, 1000);
+    });
+    
+    sendResponse({ success: true, broadcasted: true });
+    return true;
+  }
+
   // Focus Detection Messages
   if (message.action === 'startDetection') {
     console.log('Background: Received startDetection');
