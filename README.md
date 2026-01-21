@@ -36,14 +36,14 @@ npm run build
 - **GitHub Agent** - AI-powered GitHub repository assistant with chatbot UI (Groq API)
 
 ### Learning Tools
-- **YouTube Ad Blocker** - Skip ads automatically on YouTube
-- **Speed Improver** - Defer images and optimize page loading
-- **Learning Agent** - AI-powered page analyzer using Groq API (Llama 3.3 70B) with markdown support
+- **Ad Blocker** - Block ads and trackers on websites
+- **Speed Improver** - Defer images, block heavy scripts
+- **Learning Agent** - AI assistant to answer questions about any page
 
 ### Productivity Tools
-- **Focus Mode** - Hide distractions and dim page for better concentration
-- **Focus Detection** - Camera-based phone detection with alerts (Roboflow API)
-- **Nuclear Mode** - Whitelist-based site blocking with timer for focused work sessions
+- **YouTube Focus Mode** - Remove distractions, block shorts
+- **Focus Detection** - Detect mobile phone usage via webcam
+- **Nuclear Mode** - Block non-whitelisted sites with timer
 
 ### Tab Manager
 - **Clear All Data** - One-click clearing of all extension data
@@ -60,12 +60,26 @@ npm run build
 - Clean, professional UI with muted color palette
 
 ### Learning Agent
-- AI-powered content analysis using Groq's Llama 3.3 70B model
+- AI assistant to answer questions about any page
 - Works on any webpage with smart content extraction
 - Floating, draggable, resizable chat interface
 - Markdown rendering for formatted responses
 - Secure API key storage in chrome.storage.local
 - Positioned at top-right for easy access
+
+### YouTube Focus Mode
+- Remove distractions and block shorts on YouTube
+- Clean viewing experience for focused learning
+- Hides recommended videos and distracting elements
+- Toggle on/off from popup
+
+### Focus Detection
+- Detect mobile phone usage via webcam
+- Real-time alerts when phone detected (>60% confidence)
+- Cross-tab alert system - alerts appear on all open tabs
+- Visual feedback with bounding boxes
+- Uses offscreen document for camera access
+- Helps maintain focus during work sessions
 
 ### GitHub Agent
 - AI-powered GitHub repository assistant
@@ -76,20 +90,18 @@ npm run build
 - Draggable and resizable interface
 
 ### Nuclear Mode
-- Whitelist-based site blocking for focused work sessions
+- Block non-whitelisted sites with timer
 - Timer-based auto-deactivation with countdown display
 - Blocks new tabs and navigation to non-whitelisted sites
 - Add/remove sites from whitelist easily
 - Floating timer panel shows remaining time
 - Managed through chrome.webNavigation API
 
-### Focus Detection
-- Camera-based mobile phone detection using Roboflow API
-- Real-time alerts when phone detected (>60% confidence)
-- Cross-tab alert system - alerts appear on all open tabs
-- Visual feedback with bounding boxes
-- Uses offscreen document for camera access
-- Helps maintain focus during work sessions
+### Ad Blocker
+- Block ads and trackers on websites
+- Uses declarative net request rules
+- Lightweight and efficient blocking
+- Toggle on/off from popup
 
 ## Project Structure
 
