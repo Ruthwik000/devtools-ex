@@ -46,8 +46,10 @@ npm run build
 - **Nuclear Mode** - Block non-whitelisted sites with timer
 
 ### Tab Manager
-- **Clear All Data** - One-click clearing of all extension data
-- **Storage Stats** - View current storage usage
+- **Save Tab Groups** - Collect and save current tabs with a custom name
+- **Restore Tab Groups** - Restore saved tab groups with one click
+- **Manage Groups** - View, delete, and organize saved tab groups
+- **Select Tabs** - Choose which tabs to save in a group
 
 ## Key Features Detail
 
@@ -102,6 +104,14 @@ npm run build
 - Uses declarative net request rules
 - Lightweight and efficient blocking
 - Toggle on/off from popup
+
+### Tab Manager
+- Save current open tabs as named groups
+- Select specific tabs to include in a group
+- Restore all tabs from a saved group with one click
+- View tab previews with favicons and titles
+- Delete individual groups or clear all groups
+- Persistent storage of tab groups across sessions
 
 ## Project Structure
 
