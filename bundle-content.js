@@ -84,10 +84,7 @@ function handleFeatureToggle(key, value) {
         break;
       case 'githubAgent':
         if (window.location.hostname.includes('github.com')) {
-          activeFeatures[key] = {
-            chatbot: initGitHubChatbotUI(),
-            navigation: initGitHubNavigation()
-          };
+          activeFeatures[key] = initGitHubChatbotUI();
         }
         break;
       case 'learningAgent':

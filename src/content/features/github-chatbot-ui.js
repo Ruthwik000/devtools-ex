@@ -40,12 +40,18 @@ export function initGitHubChatbotUI() {
     chatWindow.innerHTML = `
       <div class="chat-header">
         <div class="chat-title">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="#58a6ff">
             <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
           </svg>
-          <span>GitHub AI Assistant</span>
+          <span style="color: #58a6ff;">GitHub AI Assistant</span>
         </div>
         <div class="chat-controls">
+          <button class="chat-btn" id="github-settings-btn" title="Settings">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
+            </svg>
+          </button>
           <button class="chat-btn collapse-btn" title="Collapse">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
               <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM5 7.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
@@ -69,9 +75,7 @@ export function initGitHubChatbotUI() {
           </button>
         </div>
       </div>
-      <div class="chat-footer">
-        <button id="settings-btn" class="settings-btn">⚙️ Settings</button>
-      </div>
+      <div class="resize-handle" style="position: absolute; bottom: 0; right: 0; width: 20px; height: 20px; cursor: nwse-resize; background: linear-gradient(135deg, transparent 50%, #30363d 50%); border-radius: 0 0 16px 0;"></div>
     `;
 
     // Add styles
@@ -79,36 +83,60 @@ export function initGitHubChatbotUI() {
     style.textContent = `
       #github-ai-chatbot {
         position: fixed;
-        bottom: 20px;
+        top: 20px;
         right: 20px;
-        width: 380px;
-        max-height: 600px;
+        width: 420px;
+        min-width: 350px;
+        max-height: 650px;
+        min-height: 400px;
         background: #0d1117;
         border: 1px solid #30363d;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
         z-index: 999999;
         display: flex;
         flex-direction: column;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         color: #c9d1d9;
         transition: max-height 0.3s ease;
+        resize: both;
+        overflow: hidden;
       }
 
       #github-ai-chatbot.collapsed {
-        max-height: 48px;
+        width: 240px;
+        min-width: 240px;
+        max-height: 60px;
+        min-height: 60px;
+        height: 60px;
+        resize: none;
+        border-radius: 30px;
+      }
+
+      #github-ai-chatbot.collapsed .chat-title {
+        font-size: 14px;
+      }
+
+      #github-ai-chatbot.collapsed .chat-title span {
+        display: inline;
       }
 
       .chat-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 12px 16px;
+        padding: 16px 20px;
         background: #161b22;
         border-bottom: 1px solid #30363d;
-        border-radius: 12px 12px 0 0;
+        border-radius: 16px 16px 0 0;
         cursor: move;
         user-select: none;
+      }
+
+      #github-ai-chatbot.collapsed .chat-header {
+        border-radius: 30px;
+        border-bottom: none;
+        padding: 12px 16px;
       }
 
       .chat-title {
@@ -125,22 +153,44 @@ export function initGitHubChatbotUI() {
         gap: 8px;
       }
 
+      #github-ai-chatbot.collapsed .chat-controls {
+        gap: 6px;
+      }
+
+      #github-ai-chatbot.collapsed #github-settings-btn {
+        display: none;
+      }
+
       .chat-btn {
-        background: transparent;
+        background: rgba(48, 54, 61, 0.5);
         border: none;
         color: #8b949e;
         cursor: pointer;
-        padding: 4px;
-        border-radius: 6px;
+        padding: 6px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.2s;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+      }
+
+      #github-ai-chatbot.collapsed .chat-btn {
+        width: 28px;
+        height: 28px;
+        padding: 5px;
       }
 
       .chat-btn:hover {
-        background: #30363d;
+        background: rgba(48, 54, 61, 0.8);
         color: #c9d1d9;
+      }
+
+      .close-btn:hover {
+        background: rgba(218, 54, 51, 0.8) !important;
+        color: white !important;
       }
 
       .chat-body {
@@ -148,10 +198,15 @@ export function initGitHubChatbotUI() {
         flex-direction: column;
         flex: 1;
         overflow: hidden;
+        background: #0d1117;
+        position: relative;
       }
 
-      #github-ai-chatbot.collapsed .chat-body,
-      #github-ai-chatbot.collapsed .chat-footer {
+      #github-ai-chatbot.collapsed .chat-body {
+        display: none;
+      }
+
+      #github-ai-chatbot.collapsed .resize-handle {
         display: none;
       }
 
@@ -159,10 +214,10 @@ export function initGitHubChatbotUI() {
         flex: 1;
         overflow-y: auto;
         padding: 16px;
+        padding-bottom: 80px;
         display: flex;
         flex-direction: column;
         gap: 12px;
-        max-height: 400px;
       }
 
       .chat-messages::-webkit-scrollbar {
@@ -183,7 +238,7 @@ export function initGitHubChatbotUI() {
       }
 
       .message {
-        padding: 10px 12px;
+        padding: 10px 14px;
         border-radius: 8px;
         font-size: 13px;
         line-height: 1.5;
@@ -192,67 +247,89 @@ export function initGitHubChatbotUI() {
       }
 
       .message.user {
-        background: #1f6feb;
+        background: #21262d;
         color: white;
         align-self: flex-end;
         margin-left: auto;
+        border: 1px solid #30363d;
       }
 
       .message.assistant {
-        background: #21262d;
+        background: #161b22;
         color: #c9d1d9;
         align-self: flex-start;
+        border: 1px solid #30363d;
       }
 
       .message.error {
-        background: #da3633;
-        color: white;
+        background: #3d1e1e;
+        color: #f85149;
         align-self: flex-start;
+        border: 1px solid #da3633;
       }
 
       .message.loading {
-        background: #21262d;
+        background: #161b22;
         color: #8b949e;
         font-style: italic;
         align-self: flex-start;
+        border: 1px solid #30363d;
       }
 
       .chat-input-area {
         display: flex;
         gap: 8px;
-        padding: 12px 16px;
+        align-items: flex-end;
+        padding: 16px;
         border-top: 1px solid #30363d;
         background: #0d1117;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
       }
 
       #chat-input {
         flex: 1;
         background: #0d1117;
         border: 1px solid #30363d;
-        border-radius: 6px;
-        padding: 8px 12px;
+        border-radius: 20px;
+        padding: 10px 16px;
         color: #c9d1d9;
-        font-size: 13px;
+        font-size: 14px;
         font-family: inherit;
         resize: none;
         outline: none;
+        transition: all 0.2s;
+        min-height: 40px;
+        max-height: 40px;
+        line-height: 1.5;
+        overflow-y: hidden;
       }
 
       #chat-input:focus {
         border-color: #58a6ff;
+        background: #0d1117;
+      }
+
+      #chat-input::placeholder {
+        color: #6B7280;
       }
 
       .send-btn {
         background: #238636;
         border: none;
-        border-radius: 6px;
-        padding: 8px 12px;
+        border-radius: 50%;
+        padding: 0;
+        width: 40px;
+        height: 40px;
         color: white;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: background 0.2s;
+        transition: all 0.2s;
+        flex-shrink: 0;
       }
 
       .send-btn:hover {
@@ -265,30 +342,7 @@ export function initGitHubChatbotUI() {
         opacity: 0.5;
       }
 
-      .chat-footer {
-        padding: 8px 16px;
-        border-top: 1px solid #30363d;
-        background: #0d1117;
-        border-radius: 0 0 12px 12px;
-      }
 
-      .settings-btn {
-        background: transparent;
-        border: 1px solid #30363d;
-        color: #8b949e;
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-        cursor: pointer;
-        width: 100%;
-        transition: all 0.2s;
-      }
-
-      .settings-btn:hover {
-        background: #21262d;
-        color: #c9d1d9;
-        border-color: #484f58;
-      }
 
       .empty-state {
         text-align: center;
@@ -361,6 +415,7 @@ export function initGitHubChatbotUI() {
     // Initialize UI
     updateChatWindow();
     attachEventListeners();
+    makeResizable();
   }
 
   function updateChatWindow() {
@@ -429,7 +484,7 @@ export function initGitHubChatbotUI() {
     const closeBtn = chatWindow.querySelector('.close-btn');
     const sendBtn = document.getElementById('chat-send-btn');
     const input = document.getElementById('chat-input');
-    const settingsBtn = document.getElementById('settings-btn');
+    const settingsBtn = document.getElementById('github-settings-btn');
 
     // Dragging
     header.addEventListener('mousedown', (e) => {
@@ -464,19 +519,16 @@ export function initGitHubChatbotUI() {
     collapseBtn.addEventListener('click', () => {
       isCollapsed = !isCollapsed;
       chatWindow.classList.toggle('collapsed', isCollapsed);
-      collapseBtn.innerHTML = isCollapsed ? 
-        `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0zm7-3.25v2.992l2.028.812a.75.75 0 0 1-.557 1.392l-2.5-1A.75.75 0 0 1 7 8.25v-3.5a.75.75 0 0 1 1.5 0z"/></svg>` :
-        `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM5 7.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/></svg>`;
     });
 
     // Close
     closeBtn.addEventListener('click', () => {
-      cleanup();
       // Update the toggles object to turn off the feature
-      chrome.storage.sync.get(['toggles'], (data) => {
+      const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
+      browserAPI.storage.sync.get(['toggles'], (data) => {
         const toggles = data.toggles || {};
         toggles.githubAgent = false;
-        chrome.storage.sync.set({ toggles });
+        browserAPI.storage.sync.set({ toggles });
       });
     });
 
@@ -631,6 +683,43 @@ export function initGitHubChatbotUI() {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  function makeResizable() {
+    const handle = chatWindow.querySelector('.resize-handle');
+    if (!handle) return;
+
+    let isResizing = false;
+    let startX, startY, startWidth, startHeight;
+
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      isResizing = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      const rect = chatWindow.getBoundingClientRect();
+      startWidth = rect.width;
+      startHeight = rect.height;
+      chatWindow.style.transition = 'none';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isResizing) return;
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      const newWidth = Math.max(320, startWidth + deltaX);
+      const newHeight = Math.max(200, startHeight + deltaY);
+      chatWindow.style.width = newWidth + 'px';
+      chatWindow.style.maxHeight = newHeight + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isResizing) {
+        isResizing = false;
+        chatWindow.style.transition = '';
+      }
+    });
   }
 
   function cleanup() {

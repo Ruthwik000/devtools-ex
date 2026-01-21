@@ -8,7 +8,6 @@ import { initFocusDetection } from './features/focus-detection.js';
 import { initNuclearMode } from './features/nuclear-mode.js';
 import { initSpeedImprover } from './features/speed-improver.js';
 import { initYouTubeAdBlock } from './features/youtube-adblock.js';
-import { initGitHubNavigation } from './features/github-navigation.js';
 import { initGitHubChatbotUI } from './features/github-chatbot-ui.js';
 import { initLearningAgentUI } from './features/learning-agent-ui.js'; // Learning Agent with markdown support
 
@@ -213,12 +212,9 @@ function handleFeatureToggle(feature, enabled) {
       activeFeatures[feature] = initYouTubeAdBlock();
       break;
     case 'githubAgent':
-      // GitHub Agent with floating chatbot UI and navigation
+      // GitHub Agent with floating chatbot UI
       if (window.location.hostname.includes('github.com')) {
-        activeFeatures[feature] = {
-          chatbot: initGitHubChatbotUI(),
-          navigation: initGitHubNavigation()
-        };
+        activeFeatures[feature] = initGitHubChatbotUI();
       }
       break;
     case 'awsAgent':

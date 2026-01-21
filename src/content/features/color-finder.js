@@ -371,63 +371,63 @@ export function initColorFinder() {
     panel.style.cssText = `
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       width: 450px; min-width: 400px; min-height: 500px;
-      background: #111827;
-      border: 1px solid #374151;
-      border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      background: #37353E;
+      border: 1px solid #44444E;
+      border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
       z-index: 9999999; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       overflow: hidden; display: flex; flex-direction: column;
       resize: both;
     `;
 
     panel.innerHTML = `
-      <div id="cf-header" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); padding: 20px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); cursor: move; user-select: none; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+      <div id="cf-header" style="background: #44444E; padding: 20px; border-bottom: 1px solid #715A5A; cursor: move; user-select: none;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <h2 style="margin: 0; font-size: 20px; color: #FFFFFF; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">ColorFinder</h2>
-          <button id="close-panel" style="background: rgba(255,255,255,0.2); border: none; font-size: 24px; color: #FFFFFF; cursor: pointer; padding: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;">×</button>
+          <h2 style="margin: 0; font-size: 20px; color: #D3DAD9; font-weight: 700;">ColorFinder</h2>
+          <button id="close-panel" style="background: rgba(113, 90, 90, 0.3); border: none; font-size: 24px; color: #D3DAD9; cursor: pointer; padding: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;">×</button>
         </div>
       </div>
 
-      <div style="padding: 24px; flex: 1; overflow-y: auto; background: #1F2937;">
+      <div style="padding: 24px; flex: 1; overflow-y: auto; background: #37353E;">
         <!-- Menu Items -->
         <div style="display: flex; flex-direction: column; gap: 12px;">
-          <button class="menu-item" data-action="pick-page" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
+          <button class="menu-item" data-action="pick-page" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: #44444E; border: 1px solid #715A5A; border-radius: 12px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D3DAD9" stroke-width="2.5">
               <path d="M7 17L17 7M17 7H7M17 7V17"/>
             </svg>
-            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Pick Color From Page</span>
+            <span style="font-size: 15px; color: #D3DAD9; font-weight: 600;">Pick Color From Page</span>
           </button>
 
-          <button class="menu-item" data-action="color-picker" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);">
+          <button class="menu-item" data-action="color-picker" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: #44444E; border: 1px solid #715A5A; border-radius: 12px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" fill="#FFFFFF" opacity="0.3"/>
-              <circle cx="12" cy="12" r="6" fill="#FFFFFF"/>
+              <circle cx="12" cy="12" r="10" fill="#D3DAD9" opacity="0.3"/>
+              <circle cx="12" cy="12" r="6" fill="#D3DAD9"/>
             </svg>
-            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Color Picker</span>
+            <span style="font-size: 15px; color: #D3DAD9; font-weight: 600;">Color Picker</span>
           </button>
 
-          <button class="menu-item" data-action="history" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
+          <button class="menu-item" data-action="history" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: #44444E; border: 1px solid #715A5A; border-radius: 12px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D3DAD9" stroke-width="2.5">
               <circle cx="12" cy="12" r="10"/>
               <polyline points="12 6 12 12 16 14"/>
             </svg>
-            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Picked Color History</span>
+            <span style="font-size: 15px; color: #D3DAD9; font-weight: 600;">Picked Color History</span>
           </button>
         </div>
 
-        <div style="height: 2px; background: linear-gradient(90deg, transparent, #374151, transparent); margin: 20px 0;"></div>
+        <div style="height: 1px; background: #715A5A; margin: 20px 0;"></div>
 
         <div style="display: flex; flex-direction: column; gap: 12px;">
-          <button class="menu-item" data-action="analyzer" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%; text-align: left; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
+          <button class="menu-item" data-action="analyzer" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: #44444E; border: 1px solid #715A5A; border-radius: 12px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D3DAD9" stroke-width="2.5">
               <circle cx="11" cy="11" r="8"/>
               <path d="M21 21l-4.35-4.35"/>
             </svg>
-            <span style="font-size: 15px; color: #FFFFFF; font-weight: 600;">Webpage Color Analyzer</span>
+            <span style="font-size: 15px; color: #D3DAD9; font-weight: 600;">Webpage Color Analyzer</span>
           </button>
         </div>
       </div>
 
-      <div id="resize-handle" style="position: absolute; bottom: 0; right: 0; width: 24px; height: 24px; cursor: nwse-resize; background: linear-gradient(135deg, transparent 50%, #3B82F6 50%); border-radius: 0 0 16px 0;"></div>
+      <div id="resize-handle" style="position: absolute; bottom: 0; right: 0; width: 24px; height: 24px; cursor: nwse-resize; background: linear-gradient(135deg, transparent 50%, #715A5A 50%); border-radius: 0 0 16px 0;"></div>
     `;
 
     document.body.appendChild(panel);
@@ -445,23 +445,21 @@ export function initColorFinder() {
 
     // Hover effects for close button
     panel.querySelector('#close-panel').addEventListener('mouseenter', function() {
-      this.style.background = 'rgba(239, 68, 68, 0.9)';
-      this.style.transform = 'scale(1.1)';
+      this.style.background = 'rgba(113, 90, 90, 0.6)';
     });
     panel.querySelector('#close-panel').addEventListener('mouseleave', function() {
-      this.style.background = 'rgba(255,255,255,0.2)';
-      this.style.transform = 'scale(1)';
+      this.style.background = 'rgba(113, 90, 90, 0.3)';
     });
 
     // Menu item hover effects and actions
     panel.querySelectorAll('.menu-item').forEach(item => {
       item.addEventListener('mouseenter', function() {
-        this.style.transform = 'translateY(-2px)';
-        this.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
+        this.style.background = '#715A5A';
+        this.style.transform = 'translateX(4px)';
       });
       item.addEventListener('mouseleave', function() {
-        this.style.transform = 'translateY(0)';
-        this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        this.style.background = '#44444E';
+        this.style.transform = 'translateX(0)';
       });
 
       item.addEventListener('click', function() {
@@ -534,40 +532,40 @@ export function initColorFinder() {
   // Show color picker panel
   function showColorPicker() {
     panel.innerHTML = `
-      <div style="padding: 20px;">
+      <div style="padding: 20px; background: #37353E; height: 100%;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <button id="back-btn" style="background: none; border: none; color: #3B82F6; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 4px;">
+          <button id="back-btn" style="background: none; border: none; color: #D3DAD9; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 4px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
             Back
           </button>
-          <h3 style="margin: 0; font-size: 16px; color: #1F2937;">Color Picker</h3>
-          <button id="close-panel" style="background: none; border: none; font-size: 24px; color: #6B7280; cursor: pointer;">×</button>
+          <h3 style="margin: 0; font-size: 16px; color: #D3DAD9;">Color Picker</h3>
+          <button id="close-panel" style="background: none; border: none; font-size: 24px; color: #D3DAD9; cursor: pointer;">×</button>
         </div>
 
-        <div id="color-preview" style="width: 100%; height: 80px; border-radius: 8px; margin-bottom: 16px; background: rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b}); border: 2px solid #E5E7EB;"></div>
+        <div id="color-preview" style="width: 100%; height: 80px; border-radius: 8px; margin-bottom: 16px; background: rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b}); border: 2px solid #715A5A;"></div>
 
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #F9FAFB; border-radius: 6px;">
-            <span id="hex-value" style="font-family: monospace; font-size: 14px; color: #1F2937;">${rgbToHex(currentColor.r, currentColor.g, currentColor.b)}</span>
-            <button class="copy-btn" data-format="hex" style="background: #3B82F6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Copy</button>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #44444E; border-radius: 6px; border: 1px solid #715A5A;">
+            <span id="hex-value" style="font-family: monospace; font-size: 14px; color: #D3DAD9;">${rgbToHex(currentColor.r, currentColor.g, currentColor.b)}</span>
+            <button class="copy-btn" data-format="hex" style="background: #715A5A; color: #D3DAD9; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Copy</button>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #F9FAFB; border-radius: 6px;">
-            <span id="rgb-value" style="font-family: monospace; font-size: 14px; color: #1F2937;">rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b})</span>
-            <button class="copy-btn" data-format="rgb" style="background: #3B82F6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Copy</button>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #44444E; border-radius: 6px; border: 1px solid #715A5A;">
+            <span id="rgb-value" style="font-family: monospace; font-size: 14px; color: #D3DAD9;">rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b})</span>
+            <button class="copy-btn" data-format="rgb" style="background: #715A5A; color: #D3DAD9; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Copy</button>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #F9FAFB; border-radius: 6px;">
-            <span id="hsl-value" style="font-family: monospace; font-size: 14px; color: #1F2937;">hsl(${rgbToHsl(currentColor.r, currentColor.g, currentColor.b).h}, ${rgbToHsl(currentColor.r, currentColor.g, currentColor.b).s}%, ${rgbToHsl(currentColor.r, currentColor.g, currentColor.b).l}%)</span>
-            <button class="copy-btn" data-format="hsl" style="background: #3B82F6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Copy</button>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #44444E; border-radius: 6px; border: 1px solid #715A5A;">
+            <span id="hsl-value" style="font-family: monospace; font-size: 14px; color: #D3DAD9;">hsl(${rgbToHsl(currentColor.r, currentColor.g, currentColor.b).h}, ${rgbToHsl(currentColor.r, currentColor.g, currentColor.b).s}%, ${rgbToHsl(currentColor.r, currentColor.g, currentColor.b).l}%)</span>
+            <button class="copy-btn" data-format="hsl" style="background: #715A5A; color: #D3DAD9; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Copy</button>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #F9FAFB; border-radius: 6px;">
-            <span id="hsv-value" style="font-family: monospace; font-size: 14px; color: #1F2937;">hsv(${rgbToHsv(currentColor.r, currentColor.g, currentColor.b).h}, ${rgbToHsv(currentColor.r, currentColor.g, currentColor.b).s}%, ${rgbToHsv(currentColor.r, currentColor.g, currentColor.b).v}%)</span>
-            <button class="copy-btn" data-format="hsv" style="background: #3B82F6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Copy</button>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #44444E; border-radius: 6px; border: 1px solid #715A5A;">
+            <span id="hsv-value" style="font-family: monospace; font-size: 14px; color: #D3DAD9;">hsv(${rgbToHsv(currentColor.r, currentColor.g, currentColor.b).h}, ${rgbToHsv(currentColor.r, currentColor.g, currentColor.b).s}%, ${rgbToHsv(currentColor.r, currentColor.g, currentColor.b).v}%)</span>
+            <button class="copy-btn" data-format="hsv" style="background: #715A5A; color: #D3DAD9; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Copy</button>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #F9FAFB; border-radius: 6px;">
-            <span id="cmyk-value" style="font-family: monospace; font-size: 14px; color: #1F2937;">cmyk(${rgbToCmyk(currentColor.r, currentColor.g, currentColor.b).c}%, ${rgbToCmyk(currentColor.r, currentColor.g, currentColor.b).m}%, ${rgbToCmyk(currentColor.r, currentColor.g, currentColor.b).y}%, ${rgbToCmyk(currentColor.r, currentColor.g, currentColor.b).k}%)</span>
-            <button class="copy-btn" data-format="cmyk" style="background: #3B82F6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Copy</button>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #44444E; border-radius: 6px; border: 1px solid #715A5A;">
+            <span id="cmyk-value" style="font-family: monospace; font-size: 14px; color: #D3DAD9;">cmyk(${rgbToCmyk(currentColor.r, currentColor.g, currentColor.b).c}%, ${rgbToCmyk(currentColor.r, currentColor.g, currentColor.b).m}%, ${rgbToCmyk(currentColor.r, currentColor.g, currentColor.b).y}%, ${rgbToCmyk(currentColor.r, currentColor.g, currentColor.b).k}%)</span>
+            <button class="copy-btn" data-format="cmyk" style="background: #715A5A; color: #D3DAD9; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Copy</button>
           </div>
         </div>
       </div>
@@ -580,35 +578,35 @@ export function initColorFinder() {
   function showColorHistory() {
     const historyHTML = colorHistory.length > 0 
       ? colorHistory.map(color => `
-          <div class="history-item" data-rgb="${color.r},${color.g},${color.b}" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #F9FAFB; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
-            <div style="width: 40px; height: 40px; border-radius: 6px; background: rgb(${color.r}, ${color.g}, ${color.b}); border: 2px solid #E5E7EB; flex-shrink: 0;"></div>
+          <div class="history-item" data-rgb="${color.r},${color.g},${color.b}" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #44444E; border: 1px solid #715A5A; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+            <div style="width: 40px; height: 40px; border-radius: 6px; background: rgb(${color.r}, ${color.g}, ${color.b}); border: 2px solid #715A5A; flex-shrink: 0;"></div>
             <div style="flex: 1;">
-              <div style="font-family: monospace; font-size: 14px; color: #1F2937; font-weight: 600;">${color.hex}</div>
-              <div style="font-size: 12px; color: #6B7280;">rgb(${color.r}, ${color.g}, ${color.b})</div>
+              <div style="font-family: monospace; font-size: 14px; color: #D3DAD9; font-weight: 600;">${color.hex}</div>
+              <div style="font-size: 12px; color: #D3DAD9; opacity: 0.7;">rgb(${color.r}, ${color.g}, ${color.b})</div>
             </div>
-            <button class="copy-history-btn" data-hex="${color.hex}" style="background: #3B82F6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Copy</button>
+            <button class="copy-history-btn" data-hex="${color.hex}" style="background: #715A5A; color: #D3DAD9; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Copy</button>
           </div>
         `).join('')
-      : '<div style="text-align: center; padding: 40px; color: #9CA3AF;">No colors picked yet. Use "Pick Color From Page" to start!</div>';
+      : '<div style="text-align: center; padding: 40px; color: #D3DAD9; opacity: 0.6;">No colors picked yet. Use "Pick Color From Page" to start!</div>';
 
     panel.innerHTML = `
-      <div style="padding: 20px;">
+      <div style="padding: 20px; background: #37353E; height: 100%;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <button id="back-btn" style="background: none; border: none; color: #3B82F6; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 4px;">
+          <button id="back-btn" style="background: none; border: none; color: #D3DAD9; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 4px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
             Back
           </button>
-          <h3 style="margin: 0; font-size: 16px; color: #1F2937;">Color History</h3>
-          <button id="close-panel" style="background: none; border: none; font-size: 24px; color: #6B7280; cursor: pointer;">×</button>
+          <h3 style="margin: 0; font-size: 16px; color: #D3DAD9;">Color History</h3>
+          <button id="close-panel" style="background: none; border: none; font-size: 24px; color: #D3DAD9; cursor: pointer;">×</button>
         </div>
 
         <div style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
           ${historyHTML}
         </div>
 
-        ${colorHistory.length > 0 ? '<button id="clear-history" style="width: 100%; margin-top: 16px; padding: 10px; background: #EF4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">Clear History</button>' : ''}
+        ${colorHistory.length > 0 ? '<button id="clear-history" style="width: 100%; margin-top: 16px; padding: 10px; background: #715A5A; color: #D3DAD9; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">Clear History</button>' : ''}
       </div>
     `;
 
@@ -617,10 +615,10 @@ export function initColorFinder() {
     // History item click
     panel.querySelectorAll('.history-item').forEach(item => {
       item.addEventListener('mouseenter', function() {
-        this.style.background = '#E5E7EB';
+        this.style.background = '#715A5A';
       });
       item.addEventListener('mouseleave', function() {
-        this.style.background = '#F9FAFB';
+        this.style.background = '#44444E';
       });
       item.addEventListener('click', function(e) {
         if (e.target.classList.contains('copy-history-btn')) return;
@@ -678,25 +676,25 @@ export function initColorFinder() {
     const colorArray = Array.from(colors.values()).slice(0, 20);
 
     panel.innerHTML = `
-      <div style="padding: 20px;">
+      <div style="padding: 20px; background: #37353E; height: 100%;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <button id="back-btn" style="background: none; border: none; color: #3B82F6; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 4px;">
+          <button id="back-btn" style="background: none; border: none; color: #D3DAD9; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 4px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
             Back
           </button>
-          <h3 style="margin: 0; font-size: 16px; color: #1F2937;">Webpage Colors</h3>
-          <button id="close-panel" style="background: none; border: none; font-size: 24px; color: #6B7280; cursor: pointer;">×</button>
+          <h3 style="margin: 0; font-size: 16px; color: #D3DAD9;">Webpage Colors</h3>
+          <button id="close-panel" style="background: none; border: none; font-size: 24px; color: #D3DAD9; cursor: pointer;">×</button>
         </div>
 
-        <div style="margin-bottom: 12px; color: #6B7280; font-size: 14px;">Found ${colorArray.length} unique colors</div>
+        <div style="margin-bottom: 12px; color: #D3DAD9; opacity: 0.7; font-size: 14px;">Found ${colorArray.length} unique colors</div>
 
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-height: 400px; overflow-y: auto;">
           ${colorArray.map(color => `
             <div class="analyzer-color" data-rgb="${color.r},${color.g},${color.b}" style="cursor: pointer; transition: all 0.2s;">
-              <div style="width: 100%; aspect-ratio: 1; background: rgb(${color.r}, ${color.g}, ${color.b}); border-radius: 8px; border: 2px solid #E5E7EB; margin-bottom: 6px;"></div>
-              <div style="font-family: monospace; font-size: 11px; color: #1F2937; text-align: center;">${rgbToHex(color.r, color.g, color.b)}</div>
+              <div style="width: 100%; aspect-ratio: 1; background: rgb(${color.r}, ${color.g}, ${color.b}); border-radius: 8px; border: 2px solid #715A5A; margin-bottom: 6px;"></div>
+              <div style="font-family: monospace; font-size: 11px; color: #D3DAD9; text-align: center;">${rgbToHex(color.r, color.g, color.b)}</div>
             </div>
           `).join('')}
         </div>
