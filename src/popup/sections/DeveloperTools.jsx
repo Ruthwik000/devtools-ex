@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Section from '../components/Section';
 import Toggle from '../components/Toggle';
-import AWSAgent from '../components/AWSAgent';
 
 const DeveloperTools = ({ expanded, onToggle, toggles, onToggleChange }) => {
   const [showGitHubAgent, setShowGitHubAgent] = useState(false);
@@ -117,16 +116,6 @@ const DeveloperTools = ({ expanded, onToggle, toggles, onToggleChange }) => {
       )}
 
       {/* Other Developer Tools */}
-      <Toggle
-        label="AWS Agent"
-        description="AWS service recommender"
-        enabled={toggles.awsAgent || false}
-        onChange={(val) => onToggleChange('awsAgent', val)}
-      />
-
-      {/* AWS Agent UI - Only show when enabled */}
-      {toggles.awsAgent && <AWSAgent />}
-      
       <Toggle
         label="Auto Clear Cache"
         description="Automatically clear cache on page refresh"

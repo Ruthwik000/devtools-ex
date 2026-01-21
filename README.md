@@ -1,15 +1,8 @@
-# Dev Productivity Suite - Chrome Extension
+# ExPro - Chrome Extension
 
-A hackathon Chrome Extension (Manifest V3) with developer tools, learning utilities, and productivity features.
+A Chrome Extension (Manifest V3) providing developer tools, learning utilities, and productivity features through a minimal popup with rich in-page UIs.
 
-## 🏗️ Architecture
-
-- **Popup UI**: React + Tailwind CSS control center
-- **Background**: Service Worker for background tasks
-- **Content Scripts**: Feature injection into web pages
-- **Storage**: chrome.storage.sync for toggles, chrome.storage.local for data
-
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Install dependencies
@@ -25,148 +18,151 @@ npm run build
 4. Select the `dist` folder
 ```
 
-## 📦 Features
+## Architecture
+
+- **Popup**: React + Tailwind control center (minimal UI)
+- **Background**: Service worker for message routing and background tasks
+- **Content Scripts**: Feature injection with floating panels in web pages
+- **Storage**: chrome.storage.sync for toggles, chrome.storage.local for data
+
+## Features
 
 ### Developer Tools
-- ✅ **Clear Cache** - Background-only cache clearing
-- ✅ **Edit Cookie** - Floating panel to view/edit/delete cookies
-- ✅ **Check SEO** - Basic SEO analysis overlay
-- ✅ **Font Finder** - Hover to see font details
-- ✅ **Color Finder** - Click to copy color values
-- ✅ **GitHub File Tree** - VS Code-like sidebar for repository navigation with material icons
-- 🔌 **GitHub Agent** - Integration hook (teammate implementation)
-- 🔌 **AWS Agent** - Integration hook (teammate implementation)
+- **Auto Clear Cache** - Automatically clear cache on page refresh
+- **Edit Cookie** - Floating panel to view/edit/delete cookies with search and filtering
+- **Check SEO** - Basic SEO analysis overlay with meta tags and heading structure
+- **Font Finder** - Hover to see font details with copy functionality
+- **Color Finder** - Professional color picker with eyedropper, history, and webpage analyzer
+- **GitHub Agent** - AI-powered GitHub repository assistant with chatbot UI (Groq API)
 
 ### Learning Tools
-- ✅ **Ad Blocker** - Declarative Net Request API
-- ✅ **Speed Improver** - Defer images, lightweight UI
-- ✅ **Learning Agent** - AI-powered page content analyzer with Groq API
+- **YouTube Ad Blocker** - Skip ads automatically on YouTube
+- **Speed Improver** - Defer images and optimize page loading
+- **Learning Agent** - AI-powered page analyzer using Groq API (Llama 3.3 70B) with markdown support
 
 ### Productivity Tools
-- ✅ **Focus Mode** - Hide distractions, dim page
-- ✅ **Passive Watching Detector** - Inactivity detection with gentle prompts
-- ✅ **Energy-Aware Scheduling** - Manual energy level selection with suggestions
+- **Focus Mode** - Hide distractions and dim page for better concentration
+- **Focus Detection** - Camera-based phone detection with alerts (Roboflow API)
+- **Nuclear Mode** - Whitelist-based site blocking with timer for focused work sessions
 
-### Storage
-- 📊 **Repo Memory** - View and manage stored repos
-- 📚 **Learning History** - Track learning activities
-- 💾 **Saved Sessions** - Manage saved browser sessions
-- 🗑️ **Clear All Data** - One-click data clearing
+### Tab Manager
+- **Clear All Data** - One-click clearing of all extension data
+- **Storage Stats** - View current storage usage
 
-## 🔌 Integration Hooks
+## Key Features Detail
 
-The extension provides placeholder hooks for agents:
+### Color Finder
+- Professional color picker with multiple modes
+- Eyedropper tool to pick colors from any webpage
+- Color format conversion (HEX, RGB, HSL, HSV, CMYK)
+- Color history with 50-color storage
+- Webpage color analyzer to extract all colors from current page
+- Clean, professional UI with muted color palette
 
-```javascript
-// GitHub Agent Hook
-if (toggles.githubAgent && isGithubPage) {
-  // GitHub Agent with chatbot UI and navigation
-}
+### Learning Agent
+- AI-powered content analysis using Groq's Llama 3.3 70B model
+- Works on any webpage with smart content extraction
+- Floating, draggable, resizable chat interface
+- Markdown rendering for formatted responses
+- Secure API key storage in chrome.storage.local
+- Positioned at top-right for easy access
 
-// GitHub File Tree Hook
-if (toggles.githubFileTree && isGithubPage) {
-  // VS Code-like sidebar showing repository structure
-  // Features: collapsible folders, material icons, file navigation
-}
+### GitHub Agent
+- AI-powered GitHub repository assistant
+- Analyzes repository structure, files, and issues
+- Floating chatbot UI with markdown support
+- Context-aware responses about current GitHub page
+- Groq API integration for intelligent responses
+- Draggable and resizable interface
 
-// AWS Agent Hook
-if (toggles.awsAgent && isAWSPage) {
-  // AWS Agent will mount here
-}
+### Nuclear Mode
+- Whitelist-based site blocking for focused work sessions
+- Timer-based auto-deactivation with countdown display
+- Blocks new tabs and navigation to non-whitelisted sites
+- Add/remove sites from whitelist easily
+- Floating timer panel shows remaining time
+- Managed through chrome.webNavigation API
 
-// Learning Agent Hook
-if (toggles.learningAgent) {
-  // Learning Agent - Universal page content analyzer
-  // Uses Groq API to answer questions about any webpage
-}
-```
+### Focus Detection
+- Camera-based mobile phone detection using Roboflow API
+- Real-time alerts when phone detected (>60% confidence)
+- Cross-tab alert system - alerts appear on all open tabs
+- Visual feedback with bounding boxes
+- Uses offscreen document for camera access
+- Helps maintain focus during work sessions
 
-### Learning Agent Features
-- 🤖 **AI-Powered Analysis**: Uses Groq's Llama 3.3 70B model
-- 🌐 **Universal Support**: Works on any webpage
-- 💬 **Floating Chat UI**: Beautiful, draggable chat interface
-- 📄 **Smart Content Extraction**: Automatically extracts page content, headings, and metadata
-- 🔑 **API Key Management**: Secure storage of Groq API key
-- 🎨 **Modern Design**: Gradient purple theme with smooth animations
-
-### GitHub File Tree Features
-- 📁 **VS Code-Style Sidebar**: Familiar file explorer interface on the left side
-- 🎨 **Material Icons**: Beautiful emoji-based icons for different file types
-- 🔄 **Collapsible Folders**: Click folders to expand/collapse their contents
-- 🗂️ **Smart Sorting**: Folders first, then files, alphabetically sorted
-- 🎯 **Quick Navigation**: Click any file to navigate directly to it
-- 🔍 **Full Repository Structure**: Shows the complete repo tree using GitHub API
-- 💫 **Smooth Animations**: Polished transitions and hover effects
-- 🌙 **Dark Theme**: Matches VS Code's dark theme aesthetic
-- ◀️ **Collapsible Sidebar**: Hide/show the sidebar with a single click
-- 🔄 **Refresh Button**: Reload the repository structure anytime
-
-## 📁 Project Structure
+## Project Structure
 
 ```
-├── manifest.json              # Extension manifest (MV3)
-├── popup.html                 # Popup entry point
 ├── src/
-│   ├── popup/                 # React popup UI
-│   │   ├── Popup.jsx         # Main popup component
-│   │   ├── components/       # Reusable UI components
-│   │   └── sections/         # Feature sections
-│   ├── background/           # Service worker
+│   ├── popup/              # React popup UI (Vite build)
+│   │   ├── Popup.jsx       # Main component
+│   │   ├── components/     # Reusable components
+│   │   └── sections/       # Feature sections
+│   ├── background/         # Service worker
 │   │   ├── service-worker.js
-│   │   └── handlers/         # Background handlers
-│   └── content/              # Content scripts
-│       ├── content-script.js # Main content script
-│       └── features/         # Feature implementations
-├── rules/                    # DNR rules for ad blocking
-└── vite.config.js           # Build configuration
+│   │   └── handlers/       # Background handlers
+│   └── content/            # Content scripts
+│       ├── content-script.js       # Source
+│       ├── content-bundle.js       # Bundled output
+│       └── features/               # Feature implementations
+├── rules/                  # Declarative Net Request rules
+├── icons/                  # Extension icons
+├── audio/                  # Alert sounds
+├── logos/                  # Feature logos
+├── dist/                   # Build output
+├── manifest.json           # Extension manifest (MV3)
+├── build.js                # Post-build script
+├── bundle-content.js       # Content script bundler
+└── vite.config.js          # Vite configuration
 ```
 
-## 🎯 Toggle System
+## Toggle System
 
-All features are toggle-based and persist across sessions:
+All features use a toggle-based control system with persistence:
 
-1. User toggles feature in popup
-2. State saved to `chrome.storage.sync`
-3. Background worker notified
-4. Content scripts receive update
-5. Feature activated/deactivated on page
+1. User toggles feature in popup (React component)
+2. State saved to `chrome.storage.sync` (toggles object)
+3. Background worker receives `TOGGLE_CHANGED` message
+4. Background broadcasts `TOGGLE_UPDATE` to all content scripts
+5. Content script calls `handleFeatureToggle(key, value)`
+6. Feature initialized or cleaned up based on state
 
-## 🛠️ Development
+## Development
 
 ```bash
+# Install dependencies
+npm install
+
 # Development mode (watch)
 npm run dev
 
 # Production build
 npm run build
+
+# Bundle content scripts only
+npm run bundle
 ```
 
-## ✅ MVP Checklist
+### Build Process
 
-- [x] Manifest V3 setup
-- [x] React + Tailwind popup UI
-- [x] Toggle system with persistence
-- [x] Background service worker
-- [x] Content script injection
-- [x] Clear Cache (working)
-- [x] Font Finder (working)
-- [x] Focus Mode (working)
-- [x] Color Finder (working)
-- [x] Edit Cookie (working)
-- [x] Check SEO (working)
-- [x] Ad Blocker (working)
-- [x] Speed Improver (working)
-- [x] Passive Watching Detector (working)
-- [x] Energy-Aware Scheduling (working)
-- [x] Storage UI (working)
-- [x] Learning Agent with Groq API (working)
-- [x] GitHub File Tree (working)
-- [x] Integration hooks for GitHub/AWS agents
+1. `bundle-content.js` - Bundles all content script features into single file
+2. `vite build` - Builds React popup UI
+3. `build.js` - Copies manifest, icons, rules, audio, logos to `dist/`
 
-## 🎨 Design Principles
+### Tech Stack
 
-- Minimal, clean popup UI
-- No heavy UI inside popup
-- Real UI appears inside webpages
-- Toggle-based feature control
-- Professional, demo-friendly UX
+- React 18.2.0 + Tailwind CSS 3.4.0
+- Vite 5.0.8 (build tool)
+- Chrome Extension Manifest V3
+- External APIs: Groq (AI), Roboflow (computer vision)
+
+## Design Principles
+
+- **Minimal popup UI** - Clean control center, no heavy interfaces in popup
+- **Rich in-page UIs** - Floating panels injected into web pages
+- **Toggle-based control** - Simple on/off switches with persistence
+- **Professional styling** - Dark theme with muted, professional color palette
+- **Cross-browser compatible** - Works on Chrome and Firefox
+- **Privacy-focused** - All data stored locally, no tracking
+- **Draggable & Resizable** - All floating panels can be moved and resized

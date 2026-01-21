@@ -248,13 +248,10 @@ export function initEditCookie() {
 
   // Load cookies
   function loadCookies() {
-    console.log('Loading cookies for:', window.location.href);
     browserAPI.runtime.sendMessage({ type: 'GET_COOKIES', url: window.location.href }, (response) => {
-      console.log('Cookies response:', response);
       if (response && response.cookies) {
         allCookies = response.cookies;
         filteredCookies = allCookies;
-        console.log('Loaded cookies:', allCookies.length);
         renderCookieList();
         updateStats();
       } else {
@@ -342,7 +339,6 @@ export function initEditCookie() {
   }
 
   function deleteCookie(name, domain) {
-    console.log('Deleting cookie:', name, domain);
     browserAPI.runtime.sendMessage({ 
       type: 'REMOVE_COOKIE', 
       url: window.location.href, 
@@ -350,7 +346,6 @@ export function initEditCookie() {
       domain: domain
     }, (response) => {
       if (response && response.success) {
-        console.log('Cookie deleted successfully');
         loadCookies();
         if (selectedCookie && selectedCookie.name === name) {
           document.getElementById('cookie-details').style.display = 'none';
@@ -499,15 +494,12 @@ export function initEditCookie() {
       }
     }
 
-    console.log('Saving cookie:', cookieData);
-
     browserAPI.runtime.sendMessage({ 
       type: 'SET_COOKIE', 
       url: window.location.href,
       cookie: cookieData
     }, (response) => {
       if (response && response.success) {
-        console.log('Cookie saved successfully');
         setTimeout(() => {
           loadCookies();
           document.getElementById('cookie-details').style.display = 'none';

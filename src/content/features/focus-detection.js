@@ -419,9 +419,9 @@ export function initFocusDetection() {
         type: 'PHONE_DETECTED',
         timestamp: Date.now()
       }).then(response => {
-        console.log('✅ Phone detection message sent successfully:', response);
+        // Message sent successfully
       }).catch(error => {
-        console.error('❌ Failed to send phone detection message:', error);
+        // Error sending message
       });
     }
   }

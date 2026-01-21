@@ -1953,13 +1953,10 @@ function initEditCookie() {
 
   // Load cookies
   function loadCookies() {
-    console.log('Loading cookies for:', window.location.href);
     browserAPI.runtime.sendMessage({ type: 'GET_COOKIES', url: window.location.href }, (response) => {
-      console.log('Cookies response:', response);
       if (response && response.cookies) {
         allCookies = response.cookies;
         filteredCookies = allCookies;
-        console.log('Loaded cookies:', allCookies.length);
         renderCookieList();
         updateStats();
       } else {
@@ -2047,7 +2044,6 @@ function initEditCookie() {
   }
 
   function deleteCookie(name, domain) {
-    console.log('Deleting cookie:', name, domain);
     browserAPI.runtime.sendMessage({ 
       type: 'REMOVE_COOKIE', 
       url: window.location.href, 
@@ -2055,7 +2051,6 @@ function initEditCookie() {
       domain: domain
     }, (response) => {
       if (response && response.success) {
-        console.log('Cookie deleted successfully');
         loadCookies();
         if (selectedCookie && selectedCookie.name === name) {
           document.getElementById('cookie-details').style.display = 'none';
@@ -2204,15 +2199,12 @@ function initEditCookie() {
       }
     }
 
-    console.log('Saving cookie:', cookieData);
-
     browserAPI.runtime.sendMessage({ 
       type: 'SET_COOKIE', 
       url: window.location.href,
       cookie: cookieData
     }, (response) => {
       if (response && response.success) {
-        console.log('Cookie saved successfully');
         setTimeout(() => {
           loadCookies();
           document.getElementById('cookie-details').style.display = 'none';
@@ -4662,9 +4654,9 @@ function initFocusDetection() {
         type: 'PHONE_DETECTED',
         timestamp: Date.now()
       }).then(response => {
-        console.log('✅ Phone detection message sent successfully:', response);
+        // Message sent successfully
       }).catch(error => {
-        console.error('❌ Failed to send phone detection message:', error);
+        // Error sending message
       });
     }
   }
@@ -7750,7 +7742,7 @@ function initGitHubChatbotUI() {
       }
 
       .send-btn {
-        background: #238636;
+        background: #58a6ff;
         border: none;
         border-radius: 50%;
         padding: 0;
@@ -7766,13 +7758,15 @@ function initGitHubChatbotUI() {
       }
 
       .send-btn:hover {
-        background: #2ea043;
+        background: #1f6feb;
+        color: white;
       }
 
       .send-btn:disabled {
         background: #21262d;
         cursor: not-allowed;
         opacity: 0.5;
+        color: #6B7280;
       }
 
 

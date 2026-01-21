@@ -21,7 +21,6 @@ let currentToggles = {};
 function showPhoneDetectionAlert() {
   // Wait for body to exist
   if (!document.body) {
-    console.log('Waiting for document.body to show alert...');
     setTimeout(showPhoneDetectionAlert, 100);
     return;
   }
@@ -107,13 +106,9 @@ function showPhoneDetectionAlert() {
 
 // Load initial toggle state
 browserAPI.storage.sync.get(['toggles'], (result) => {
-  console.log('Loaded storage data:', result);
   if (result.toggles) {
     currentToggles = result.toggles;
-    console.log('Current toggles:', currentToggles);
     initializeFeatures();
-  } else {
-    console.log('No toggles found in storage');
   }
 });
 
@@ -143,18 +138,14 @@ browserAPI.storage.onChanged.addListener((changes, namespace) => {
 
 // Listen for toggle updates from background
 browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('📨 Content script received message:', message.type);
-  
   // Global phone detection alert - works on all tabs
   if (message.type === 'PHONE_DETECTED') {
-    console.log('📱 Phone detected alert received on this tab - showing alert!');
     showPhoneDetectionAlert();
     sendResponse({ success: true, received: true });
     return true;
   }
 
   if (message.type === 'TOGGLE_UPDATE') {
-    console.log('Toggle update:', message.key, '=', message.value);
     currentToggles[message.key] = message.value;
     handleFeatureToggle(message.key, message.value);
     sendResponse({ success: true });
@@ -163,10 +154,8 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 function initializeFeatures() {
-  console.log('Initializing features with toggles:', currentToggles);
   Object.keys(currentToggles).forEach(key => {
     if (currentToggles[key]) {
-      console.log('Initializing feature:', key);
       handleFeatureToggle(key, true);
     }
   });
@@ -217,18 +206,9 @@ function handleFeatureToggle(feature, enabled) {
         activeFeatures[feature] = initGitHubChatbotUI();
       }
       break;
-    case 'awsAgent':
-      // Integration hook for AWS Agent
-      if (window.location.hostname.includes('aws.amazon.com') || 
-          window.location.hostname.includes('console.aws')) {
-        console.log('AWS Agent integration point - ready for teammate implementation');
-      }
-      break;
     case 'learningAgent':
       // Learning Agent - Universal page content analyzer
       activeFeatures[feature] = initLearningAgentUI();
       break;
   }
 }
-
-console.log('Content script loaded');

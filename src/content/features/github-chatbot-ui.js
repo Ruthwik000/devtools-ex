@@ -317,7 +317,7 @@ export function initGitHubChatbotUI() {
       }
 
       .send-btn {
-        background: #238636;
+        background: #58a6ff;
         border: none;
         border-radius: 50%;
         padding: 0;
@@ -333,13 +333,15 @@ export function initGitHubChatbotUI() {
       }
 
       .send-btn:hover {
-        background: #2ea043;
+        background: #1f6feb;
+        color: white;
       }
 
       .send-btn:disabled {
         background: #21262d;
         cursor: not-allowed;
         opacity: 0.5;
+        color: #6B7280;
       }
 
 
