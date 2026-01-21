@@ -444,7 +444,7 @@ setInterval(async () => {
       });
 
       // Turn off the toggle
-      await chrome.storage.sync.set({ passiveWatching: false });
+      await chrome.storage.sync.set({ nuclearMode: false });
 
       // Notify all tabs
       const tabs = await chrome.tabs.query({});

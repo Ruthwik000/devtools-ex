@@ -1,5 +1,5 @@
 // Nuclear Mode - Website blocker with whitelist and timer
-export function initPassiveWatching() {
+export function initNuclearMode() {
   const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
 
   // Check if cleanup was just done (prevents re-initialization after toggle OFF)
@@ -18,14 +18,27 @@ export function initPassiveWatching() {
 
   // CRITICAL: Listen for toggle being turned OFF directly from sync storage
   browserAPI.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace === 'sync' && changes.passiveWatching) {
-      const newValue = changes.passiveWatching.newValue;
-      const oldValue = changes.passiveWatching.oldValue;
+    if (namespace === 'sync' && changes.toggles) {
+      const newToggles = changes.toggles.newValue || {};
+      const oldToggles = changes.toggles.oldValue || {};
 
-      console.log('🔄 passiveWatching changed:', oldValue, '->', newValue);
+      console.log('🔄 toggles changed:', oldToggles.nuclearMode, '->', newToggles.nuclearMode);
 
-      if (oldValue === true && newValue === false) {
-        console.log('🛑 TOGGLE TURNED OFF - FORCE CLEARING STORAGE');
+      if (oldToggles.nuclearMode === true && newToggles.nuclearMode === false) {
+        console.log('🛑 TOGGLE TURNED OFF - REMOVING UI AND CLEARING STORAGE');
+
+        // Remove panel immediately
+        if (panel && panel.parentNode) {
+          panel.remove();
+          console.log('✅ Panel removed');
+        }
+
+        // Remove floating timer if exists
+        const floatingTimer = document.getElementById('nuclear-floating-timer');
+        if (floatingTimer && floatingTimer.parentNode) {
+          floatingTimer.remove();
+          console.log('✅ Floating timer removed');
+        }
 
         // FORCE clear storage immediately
         browserAPI.storage.local.set({
@@ -480,10 +493,27 @@ export function initPassiveWatching() {
       if (message.type === 'NUCLEAR_MODE_UPDATED') {
         whitelist = message.data.whitelist || [];
         timerEndTime = message.data.timerEndTime || null;
-        isActive = message.data.isActive || false;
+        const newIsActive = message.data.isActive || false;
 
-        if (isActive && timerEndTime) {
-          // Check if current site is whitelisted FIRST
+        console.log('📨 NUCLEAR_MODE_UPDATED received:', {
+          whitelist: whitelist.length,
+          timerEndTime,
+          isActive: newIsActive,
+          oldIsActive: isActive
+        });
+
+        // Update whitelist display if panel exists
+        if (panel) {
+          updateWhitelistDisplay();
+        }
+
+        // Only handle activation/deactivation logic if state actually changed
+        if (newIsActive && !isActive && timerEndTime) {
+          // Nuclear Mode was just activated
+          console.log('🔒 Nuclear Mode activated on this tab');
+          isActive = true;
+          
+          // Check if current site is whitelisted
           const currentDomain = window.location.hostname.replace(/^www\./, '');
           const isWhitelisted = whitelist.some(site => {
             const cleanSite = site.replace(/^https?:\/\//, '').replace(/^www\./, '');
@@ -491,7 +521,6 @@ export function initPassiveWatching() {
           });
 
           if (isWhitelisted) {
-            // Site is whitelisted - show floating timer
             console.log('✅ This tab is whitelisted - showing floating timer');
             if (!floatingTimer) {
               createFloatingTimer();
@@ -500,16 +529,18 @@ export function initPassiveWatching() {
               startTimer();
             }
           } else {
-            // Site is NOT whitelisted - block it
             console.log('🔒 This tab is NOT whitelisted - will be blocked');
             checkAndBlockSite();
           }
-        } else if (isActive === false && message.data.timerEndTime) {
-          // Timer was set but not activated yet - just update the values
-          console.log('Timer updated but not activated yet');
-        } else if (!isActive) {
-          // Nuclear mode was deactivated
+        } else if (!newIsActive && isActive) {
+          // Nuclear Mode was just deactivated
+          console.log('🔓 Nuclear Mode deactivated on this tab');
+          isActive = false;
           deactivateNuclearMode();
+        } else {
+          // Just whitelist/timer update, no activation change
+          console.log('📝 Settings updated (no activation change)');
+          isActive = newIsActive;
         }
       }
     });
@@ -857,6 +888,13 @@ export function initPassiveWatching() {
 
     // Create control panel
     function createPanel() {
+      // Check if panel already exists
+      const existingPanel = document.getElementById('nuclear-mode-panel');
+      if (existingPanel) {
+        console.log('⚠️ Panel already exists, not creating duplicate');
+        return;
+      }
+
       panel = document.createElement('div');
       panel.id = 'nuclear-mode-panel';
       panel.style.cssText = `
@@ -1017,7 +1055,12 @@ export function initPassiveWatching() {
         closeBtn.addEventListener('click', () => {
           panel.remove();
           if (checkContext()) {
-            safeStorageSet({ passiveWatching: false });
+            // Turn off the toggle properly
+            browserAPI.storage.sync.get(['toggles'], (result) => {
+              const toggles = result.toggles || {};
+              toggles.nuclearMode = false;
+              browserAPI.storage.sync.set({ toggles });
+            });
           }
         });
 
@@ -1254,6 +1297,11 @@ export function initPassiveWatching() {
       console.log('✅ Nuclear Mode activated!');
       console.log('Whitelist:', whitelist);
       console.log('Timer ends at:', new Date(timerEndTime).toLocaleTimeString());
+      
+      // Verify storage was saved correctly
+      browserAPI.storage.local.get('nuclearMode', (result) => {
+        console.log('🔍 Verification - Storage after activation:', result);
+      });
 
       // Show success message
       alert(`🔒 Nuclear Mode Activated!\n\nTimer: ${Math.ceil((timerEndTime - Date.now()) / 60000)} minutes\n\nOnly whitelisted sites are accessible.\nAll other sites will be blocked.`);
@@ -1263,10 +1311,17 @@ export function initPassiveWatching() {
 
       // Check current site and block immediately if needed
       const currentDomain = window.location.hostname.replace(/^www\./, '');
+      console.log('🔍 Current domain:', currentDomain);
+      console.log('🔍 Checking against whitelist:', whitelist);
+      
       const isCurrentWhitelisted = whitelist.some(site => {
         const cleanSite = site.replace(/^https?:\/\//, '').replace(/^www\./, '');
-        return currentDomain.includes(cleanSite) || cleanSite.includes(currentDomain);
+        const matches = currentDomain.includes(cleanSite) || cleanSite.includes(currentDomain);
+        console.log(`  🔍 Comparing ${currentDomain} with ${cleanSite}: ${matches}`);
+        return matches;
       });
+
+      console.log('🔍 Is current site whitelisted?', isCurrentWhitelisted);
 
       if (!isCurrentWhitelisted) {
         // Current site is NOT whitelisted - block it immediately
@@ -1286,6 +1341,14 @@ export function initPassiveWatching() {
     function createFloatingTimer() {
       if (!checkContext()) return;
 
+      // Check if timer already exists globally (prevent duplicates)
+      const existingTimer = document.getElementById('nuclear-floating-timer');
+      if (existingTimer) {
+        console.log('⚠️ Floating timer already exists, not creating duplicate');
+        floatingTimer = existingTimer;
+        return;
+      }
+
       // Remove existing timer if any
       if (floatingTimer && floatingTimer.parentNode) {
         floatingTimer.remove();
@@ -1297,21 +1360,21 @@ export function initPassiveWatching() {
       position: fixed; top: 20px; right: 20px; width: 200px; min-height: 100px;
       background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
       border-radius: 12px; border: 2px solid #EF4444;
-      box-shadow: 0 8px 32px rgba(239, 68, 68, 0.6); z-index: 2147483647;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); z-index: 2147483647;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       color: #E5E7EB; padding: 16px; resize: both; overflow: hidden;
       min-width: 180px; min-height: 90px;
     `;
 
       floatingTimer.innerHTML = `
-      <div id="timer-header" style="cursor: move; user-select: none; margin-bottom: 12px;">
+      <div id="timer-header" style="user-select: none; margin-bottom: 12px;">
         <div style="font-size: 12px; color: #EF4444; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">🔒 NUCLEAR MODE</div>
       </div>
-      <div style="text-align: center;">
+      <div style="text-align: center; user-select: none;">
         <div id="floating-timer-value" style="font-size: 48px; font-weight: 700; color: #EF4444; line-height: 1;">--:--</div>
         <div style="font-size: 11px; color: #9CA3AF; margin-top: 8px;">Time Remaining</div>
       </div>
-      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #374151;">
+      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #374151; user-select: none;">
         <div style="font-size: 10px; color: #6B7280; text-align: center;">Cannot be stopped</div>
       </div>
     `;
@@ -1336,26 +1399,32 @@ export function initPassiveWatching() {
       const seconds = Math.floor((remaining % 60000) / 1000);
       value.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
-      // Pulse effect when time is running low (< 5 minutes)
+      // Remove pulse animation - too distracting
+      // Only add subtle border color change when time is low
       if (minutes < 5 && remaining > 0) {
-        floatingTimer.style.animation = 'pulse 2s infinite';
+        floatingTimer.style.borderColor = '#DC2626';
+      } else {
+        floatingTimer.style.borderColor = '#EF4444';
       }
     }
 
     // Make floating timer draggable
     function makeFloatingTimerDraggable() {
-      const header = floatingTimer.querySelector('#timer-header');
       let isDragging = false;
       let startX, startY, startLeft, startTop;
 
-      header.addEventListener('mousedown', (e) => {
+      // Make entire timer draggable, not just header
+      floatingTimer.style.cursor = 'move';
+
+      floatingTimer.addEventListener('mousedown', (e) => {
         isDragging = true;
         startX = e.clientX;
         startY = e.clientY;
         const rect = floatingTimer.getBoundingClientRect();
         startLeft = rect.left;
         startTop = rect.top;
-        header.style.cursor = 'grabbing';
+        floatingTimer.style.cursor = 'grabbing';
+        e.preventDefault(); // Prevent text selection while dragging
       });
 
       document.addEventListener('mousemove', (e) => {
@@ -1370,7 +1439,7 @@ export function initPassiveWatching() {
       document.addEventListener('mouseup', () => {
         if (isDragging) {
           isDragging = false;
-          header.style.cursor = 'move';
+          floatingTimer.style.cursor = 'move';
         }
       });
     }
@@ -1386,8 +1455,14 @@ export function initPassiveWatching() {
       // Save with isActive: false to stop blocking
       await saveSettings();
 
-      // Turn off the toggle in sync storage
-      await browserAPI.storage.sync.set({ passiveWatching: false });
+      // Turn off the toggle in sync storage (only once, not per tab)
+      await browserAPI.storage.sync.get(['toggles'], (result) => {
+        const toggles = result.toggles || {};
+        if (toggles.nuclearMode) {
+          toggles.nuclearMode = false;
+          browserAPI.storage.sync.set({ toggles });
+        }
+      });
 
       console.log('✅ Nuclear Mode deactivated - storage cleared');
 
@@ -1409,13 +1484,7 @@ export function initPassiveWatching() {
       const blockContainer = document.getElementById('nuclear-block-container');
       if (blockContainer) blockContainer.remove();
 
-      // Deactivation successful - page will just reload
-      console.log('✅ Nuclear Mode deactivated! Page will reload.');
-
-      // Reload current page after a brief delay
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      console.log('✅ Nuclear Mode deactivated! No reload needed.');
     }
 
     // Show active state
@@ -1492,22 +1561,12 @@ export function initPassiveWatching() {
     // Initialize
     console.log('Nuclear Mode initializing...');
 
-    // Add CSS animations
+    // Add CSS styles (removed pulse animation - too distracting)
     const style = document.createElement('style');
     style.textContent = `
-    @keyframes pulse {
-      0%, 100% { 
-        box-shadow: 0 8px 32px rgba(239, 68, 68, 0.6);
-        border-color: #EF4444;
-      }
-      50% { 
-        box-shadow: 0 8px 48px rgba(239, 68, 68, 1);
-        border-color: #DC2626;
-      }
-    }
-    
     #nuclear-floating-timer {
       pointer-events: auto !important;
+      transition: border-color 0.3s ease;
     }
     
     #nuclear-mode-panel {

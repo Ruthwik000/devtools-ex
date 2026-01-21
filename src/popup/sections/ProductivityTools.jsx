@@ -25,9 +25,9 @@ const ProductivityTools = ({ expanded, onToggle, toggles, onToggleChange }) => {
       
       <Toggle
         label="Nuclear Mode"
-        description="Detect inactivity and suggest actions"
-        enabled={toggles.passiveWatching || false}
-        onChange={(val) => onToggleChange('passiveWatching', val)}
+        description="Block non-whitelisted sites with timer"
+        enabled={toggles.nuclearMode || false}
+        onChange={(val) => onToggleChange('nuclearMode', val)}
       />
     </Section>
   );

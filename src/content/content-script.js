@@ -5,7 +5,7 @@ import { initEditCookie } from './features/edit-cookie.js';
 import { initCheckSEO } from './features/check-seo.js';
 import { initFocusMode } from './features/focus-mode.js';
 import { initFocusDetection } from './features/focus-detection.js';
-import { initPassiveWatching } from './features/passive-watching.js';
+import { initNuclearMode } from './features/nuclear-mode.js';
 import { initSpeedImprover } from './features/speed-improver.js';
 import { initYouTubeAdBlock } from './features/youtube-adblock.js';
 import { initGitHubNavigation } from './features/github-navigation.js';
@@ -202,8 +202,8 @@ function handleFeatureToggle(feature, enabled) {
     case 'focusDetection':
       activeFeatures[feature] = initFocusDetection();
       break;
-    case 'passiveWatching':
-      activeFeatures[feature] = initPassiveWatching();
+    case 'nuclearMode':
+      activeFeatures[feature] = initNuclearMode();
       break;
     case 'speedImprover':
       activeFeatures[feature] = initSpeedImprover();
