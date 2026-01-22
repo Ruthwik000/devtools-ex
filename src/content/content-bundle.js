@@ -3635,17 +3635,22 @@ function initFocusMode() {
 
     /* Minimized state */
     .focus-mode-panel.minimized {
-      width: 48px;
-      height: 48px;
-      min-width: 48px;
-      min-height: 48px;
-      border-radius: 24px;
-      cursor: move;
+      width: 240px;
+      height: 60px;
+      min-width: 240px;
+      min-height: 60px;
+      border-radius: 30px;
+      cursor: pointer;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       resize: none;
-      background: transparent;
-      border: none;
-      box-shadow: none;
+      background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
+      border: 1px solid #374151;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .focus-mode-panel.minimized:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
     }
 
     .focus-mode-panel.minimized .resize-handle {
@@ -3653,35 +3658,37 @@ function initFocusMode() {
     }
 
     .focus-mode-panel.minimized .focus-mode-header {
-      padding: 0;
-      justify-content: center;
+      padding: 12px 20px;
+      justify-content: flex-start;
       border: none;
-      cursor: move;
+      cursor: pointer;
       background: transparent;
+      gap: 12px;
     }
 
-    .focus-mode-panel.minimized .focus-mode-title,
+    .focus-mode-panel.minimized .focus-mode-logo {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+
+    .focus-mode-panel.minimized .focus-mode-title {
+      display: block;
+      font-size: 14px;
+      color: #F9FAFB;
+      pointer-events: none;
+    }
+
     .focus-mode-panel.minimized .focus-mode-minimize,
-    .focus-mode-panel.minimized .focus-mode-close,
     .focus-mode-panel.minimized .focus-mode-content,
     .focus-mode-panel.minimized .focus-mode-footer {
       display: none;
     }
 
-    .focus-mode-panel.minimized .focus-mode-logo {
-      width: 48px;
-      height: 48px;
-      margin: 0;
-      border-radius: 50%;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-
-    .focus-mode-panel.minimized:hover {
-      transform: scale(1.1);
-    }
-    
-    .focus-mode-panel.minimized:hover .focus-mode-logo {
-      box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+    .focus-mode-panel.minimized .focus-mode-close {
+      display: flex;
+      margin-left: auto;
     }
 
     .focus-mode-content {
@@ -3913,17 +3920,13 @@ function initFocusMode() {
 
     // Make panel draggable from header
     headerElement.addEventListener('mousedown', dragStart);
-    
-    // Make entire panel draggable when minimized
-    panelElement.addEventListener('mousedown', (e) => {
-      if (panelElement.classList.contains('minimized')) {
-        dragStart(e);
-      }
-    });
 
     // Click to expand when minimized
     panelElement.addEventListener('click', (e) => {
-      if (panelElement.classList.contains('minimized') && !e.target.closest('.focus-mode-close') && !isDragging) {
+      if (panelElement.classList.contains('minimized') && 
+          !e.target.closest('.focus-mode-close') && 
+          !isDragging) {
+        e.stopPropagation();
         panelElement.classList.remove('minimized');
         isMinimized = false;
         panelElement.style.cursor = 'default';
@@ -4039,16 +4042,19 @@ function initFocusMode() {
   let currentX, currentY, initialX, initialY;
 
   function dragStart(e) {
-    // Don't drag when clicking on buttons
-    if (e.target.closest('.focus-mode-close') || e.target.closest('.focus-mode-minimize')) return;
+    // Don't drag when clicking on buttons or images
+    if (e.target.closest('.focus-mode-close') || 
+        e.target.closest('.focus-mode-minimize') ||
+        e.target.tagName === 'IMG') return;
     
-    // When minimized, allow dragging from anywhere except close button
+    // When minimized, allow dragging from header
     // When expanded, only drag from header
     if (!panel) return;
     
     const isMinimizedNow = panel.classList.contains('minimized');
     if (!isMinimizedNow && !e.target.closest('.focus-mode-header')) return;
 
+    e.preventDefault();
     initialX = e.clientX - panel.offsetLeft;
     initialY = e.clientY - panel.offsetTop;
     isDragging = true;
