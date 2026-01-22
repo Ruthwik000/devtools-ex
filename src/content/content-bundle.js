@@ -3640,7 +3640,7 @@ function initFocusMode() {
       min-width: 240px;
       min-height: 60px;
       border-radius: 30px;
-      cursor: pointer;
+      cursor: default;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       resize: none;
       background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
@@ -3660,8 +3660,9 @@ function initFocusMode() {
     .focus-mode-panel.minimized .focus-mode-header {
       padding: 12px 20px;
       justify-content: flex-start;
+      align-items: center;
       border: none;
-      cursor: pointer;
+      cursor: move;
       background: transparent;
       gap: 12px;
     }
@@ -3671,6 +3672,7 @@ function initFocusMode() {
       height: 36px;
       flex-shrink: 0;
       pointer-events: none;
+      user-select: none;
     }
 
     .focus-mode-panel.minimized .focus-mode-title {
@@ -3678,9 +3680,41 @@ function initFocusMode() {
       font-size: 14px;
       color: #F9FAFB;
       pointer-events: none;
+      user-select: none;
+      line-height: 1;
+      flex: 1;
     }
 
-    .focus-mode-panel.minimized .focus-mode-minimize,
+    .focus-mode-panel.minimized .focus-mode-minimize {
+      display: none;
+    }
+
+    .focus-mode-panel.minimized .focus-mode-expand {
+      display: flex;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: #9CA3AF;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: all 0.2s;
+      margin-left: auto;
+      margin-right: 4px;
+    }
+
+    .focus-mode-panel.minimized .focus-mode-expand:hover {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3B82F6;
+    }
+
+    .focus-mode-expand {
+      display: none;
+    }
+
     .focus-mode-panel.minimized .focus-mode-content,
     .focus-mode-panel.minimized .focus-mode-footer {
       display: none;
@@ -3688,7 +3722,6 @@ function initFocusMode() {
 
     .focus-mode-panel.minimized .focus-mode-close {
       display: flex;
-      margin-left: auto;
     }
 
     .focus-mode-content {
@@ -3870,9 +3903,10 @@ function initFocusMode() {
     newPanel.innerHTML = `
       <div class="focus-mode-header">
         <div class="focus-mode-logo">
-          <img src="${browserAPI.runtime.getURL('logos/youtube-focus-logo.png')}" alt="YouTube Focus" style="width: 100%; height: 100%; object-fit: contain;">
+          <img src="${browserAPI.runtime.getURL('logos/youtube-focus-logo.png')}" alt="YouTube Focus" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none; user-select: none;">
         </div>
         <div class="focus-mode-title">YouTube Focus Mode</div>
+        <button class="focus-mode-expand" title="Expand panel">□</button>
         <button class="focus-mode-minimize" title="Minimize panel">−</button>
         <button class="focus-mode-close" title="Close panel">×</button>
       </div>
@@ -3921,18 +3955,17 @@ function initFocusMode() {
     // Make panel draggable from header
     headerElement.addEventListener('mousedown', dragStart);
 
-    // Click to expand when minimized
-    panelElement.addEventListener('click', (e) => {
-      if (panelElement.classList.contains('minimized') && 
-          !e.target.closest('.focus-mode-close') && 
-          !isDragging) {
+    // Expand button (shown when minimized)
+    const expandBtn = panelElement.querySelector('.focus-mode-expand');
+    if (expandBtn) {
+      expandBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         panelElement.classList.remove('minimized');
         isMinimized = false;
         panelElement.style.cursor = 'default';
         saveUIState();
-      }
-    });
+      });
+    }
 
     // Minimize button
     const minimizeBtn = panelElement.querySelector('.focus-mode-minimize');
@@ -3940,7 +3973,6 @@ function initFocusMode() {
       minimizeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         panelElement.classList.add('minimized');
-        panelElement.style.cursor = 'move';
         isMinimized = true;
         saveUIState();
       });
@@ -4039,31 +4071,32 @@ function initFocusMode() {
 
   // Make panel draggable - these functions are used by setupPanelEvents
   let isDragging = false;
+  let dragStarted = false;
   let currentX, currentY, initialX, initialY;
 
   function dragStart(e) {
     // Don't drag when clicking on buttons or images
     if (e.target.closest('.focus-mode-close') || 
         e.target.closest('.focus-mode-minimize') ||
+        e.target.closest('.focus-mode-expand') ||
         e.target.tagName === 'IMG') return;
     
-    // When minimized, allow dragging from header
-    // When expanded, only drag from header
-    if (!panel) return;
-    
-    const isMinimizedNow = panel.classList.contains('minimized');
-    if (!isMinimizedNow && !e.target.closest('.focus-mode-header')) return;
+    // Only drag from header
+    if (!panel || !e.target.closest('.focus-mode-header')) return;
 
     e.preventDefault();
     initialX = e.clientX - panel.offsetLeft;
     initialY = e.clientY - panel.offsetTop;
     isDragging = true;
+    dragStarted = false;
     panel.style.cursor = 'grabbing';
   }
 
   function drag(e) {
     if (!isDragging || !panel) return;
     e.preventDefault();
+    
+    dragStarted = true;
     currentX = e.clientX - initialX;
     currentY = e.clientY - initialY;
     panel.style.left = currentX + 'px';
@@ -4072,11 +4105,16 @@ function initFocusMode() {
   }
 
   function dragEnd() {
+    if (!panel) return;
+    
     isDragging = false;
-    if (panel) {
-      const isMinimizedNow = panel.classList.contains('minimized');
-      panel.style.cursor = isMinimizedNow ? 'move' : 'default';
-    }
+    const isMinimizedNow = panel.classList.contains('minimized');
+    panel.style.cursor = isMinimizedNow ? 'pointer' : 'default';
+    
+    // Reset dragStarted after a short delay
+    setTimeout(() => {
+      dragStarted = false;
+    }, 100);
   }
 
   // Setup global drag listeners
