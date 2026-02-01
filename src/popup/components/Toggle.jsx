@@ -4,15 +4,15 @@ const Toggle = ({ label, enabled, onChange, description }) => {
   return (
     <div className="flex items-center justify-between py-2">
       <div className="flex-1">
-        <div className="text-sm font-medium text-slate-100">{label}</div>
+        <div className="text-sm font-medium text-gray-200">{label}</div>
         {description && (
-          <div className="text-xs text-slate-400 mt-0.5">{description}</div>
+          <div className="text-xs text-gray-500 mt-0.5">{description}</div>
         )}
       </div>
       <button
         onClick={() => onChange(!enabled)}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-          enabled ? 'bg-primary hover:bg-primary-hover' : 'bg-slate-700'
+          enabled ? 'bg-blue-500' : 'bg-gray-600'
         }`}
       >
         <span

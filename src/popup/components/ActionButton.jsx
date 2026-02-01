@@ -3,8 +3,8 @@ import React from 'react';
 const ActionButton = ({ label, onClick, variant = 'primary' }) => {
   const baseClasses = "w-full py-2 px-3 rounded-md text-sm font-medium transition-colors";
   const variantClasses = {
-    primary: "bg-primary text-white hover:bg-primary-hover",
-    secondary: "bg-slate-700 text-slate-100 hover:bg-slate-600",
+    primary: "bg-blue-600 text-white hover:bg-blue-700",
+    secondary: "bg-gray-700 text-gray-200 hover:bg-gray-600",
     danger: "bg-red-600 text-white hover:bg-red-700"
   };
 

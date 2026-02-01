@@ -107,8 +107,8 @@ const StorageSection = ({ expanded, onToggle }) => {
     <Section title="Tab Manager" expanded={expanded} onToggle={onToggle}>
       <div className="space-y-4">
         {/* Create New Group */}
-        <div className="bg-slate-900 p-3 rounded-lg border border-slate-800">
-          <div className="text-sm font-semibold text-slate-100 mb-2">Create Tab Group</div>
+        <div className="bg-gray-750 p-3 rounded-lg border border-gray-700">
+          <div className="text-sm font-semibold text-gray-200 mb-2">Create Tab Group</div>
           
           {/* Group Name Input */}
           <input
@@ -116,20 +116,20 @@ const StorageSection = ({ expanded, onToggle }) => {
             placeholder="Group name (e.g., Work, Research)"
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 mb-2 focus:outline-none focus:border-primary"
+            className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm text-gray-200 mb-2 focus:outline-none focus:border-blue-500"
           />
 
           {/* Select/Deselect All */}
           <div className="flex gap-2 mb-2">
             <button
               onClick={selectAllTabs}
-              className="flex-1 bg-primary hover:bg-primary-hover text-white text-xs py-1.5 px-3 rounded font-medium transition-colors"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1.5 px-3 rounded font-medium transition-colors"
             >
               Select All
             </button>
             <button
               onClick={deselectAllTabs}
-              className="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-xs py-1.5 px-3 rounded font-medium transition-colors"
+              className="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-xs py-1.5 px-3 rounded font-medium transition-colors"
             >
               Deselect All
             </button>
@@ -138,7 +138,7 @@ const StorageSection = ({ expanded, onToggle }) => {
           {/* Open Tabs List */}
           <div className="max-h-48 overflow-y-auto space-y-1 mb-2">
             {openTabs.length === 0 ? (
-              <div className="text-xs text-slate-400 italic text-center py-2">No open tabs</div>
+              <div className="text-xs text-gray-500 italic text-center py-2">No open tabs</div>
             ) : (
               openTabs.map(tab => (
                 <div
@@ -146,8 +146,8 @@ const StorageSection = ({ expanded, onToggle }) => {
                   onClick={() => toggleTabSelection(tab.id)}
                   className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${
                     selectedTabs.includes(tab.id)
-                      ? 'bg-primary bg-opacity-20 border border-primary'
-                      : 'bg-slate-950 border border-slate-800 hover:bg-slate-900'
+                      ? 'bg-blue-600 bg-opacity-20 border border-blue-500'
+                      : 'bg-gray-800 border border-gray-700 hover:bg-gray-750'
                   }`}
                 >
                   <input
@@ -159,7 +159,7 @@ const StorageSection = ({ expanded, onToggle }) => {
                   {tab.favIconUrl && (
                     <img src={tab.favIconUrl} alt="" className="w-4 h-4" />
                   )}
-                  <span className="text-xs text-slate-200 truncate flex-1">
+                  <span className="text-xs text-gray-300 truncate flex-1">
                     {tab.title}
                   </span>
                 </div>
@@ -171,7 +171,7 @@ const StorageSection = ({ expanded, onToggle }) => {
           <button
             onClick={saveGroup}
             disabled={selectedTabs.length === 0 || !groupName.trim()}
-            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-700 disabled:cursor-not-allowed text-white text-sm py-2 px-4 rounded font-semibold transition-colors"
+            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm py-2 px-4 rounded font-semibold transition-colors"
           >
             Save Group ({selectedTabs.length} tabs)
           </button>
@@ -180,7 +180,7 @@ const StorageSection = ({ expanded, onToggle }) => {
         {/* Saved Groups */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm font-semibold text-slate-100">Saved Groups</div>
+            <div className="text-sm font-semibold text-gray-200">Saved Groups</div>
             {savedGroups.length > 0 && (
               <button
                 onClick={clearAllGroups}
@@ -193,21 +193,21 @@ const StorageSection = ({ expanded, onToggle }) => {
 
           <div className="space-y-2">
             {savedGroups.length === 0 ? (
-              <div className="text-xs text-slate-400 italic text-center py-4 bg-slate-900 rounded border border-slate-800">
+              <div className="text-xs text-gray-500 italic text-center py-4 bg-gray-750 rounded border border-gray-700">
                 No saved groups yet
               </div>
             ) : (
               savedGroups.map(group => (
                 <div
                   key={group.id}
-                  className="bg-slate-900 p-3 rounded-lg border border-slate-800 hover:border-slate-700 transition-colors"
+                  className="bg-gray-750 p-3 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-slate-100 mb-1">
+                      <div className="text-sm font-medium text-gray-200 mb-1">
                         {group.name}
                       </div>
-                      <div className="text-xs text-slate-400">
+                      <div className="text-xs text-gray-500">
                         {group.tabs.length} tabs • {new Date(group.created).toLocaleDateString()}
                       </div>
                     </div>
@@ -222,7 +222,7 @@ const StorageSection = ({ expanded, onToggle }) => {
                   {/* Tab Preview */}
                   <div className="space-y-1 mb-2 max-h-24 overflow-y-auto">
                     {group.tabs.slice(0, 3).map((tab, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-xs text-slate-300">
+                      <div key={idx} className="flex items-center gap-2 text-xs text-gray-400">
                         {tab.favIconUrl && (
                           <img src={tab.favIconUrl} alt="" className="w-3 h-3" />
                         )}
@@ -230,7 +230,7 @@ const StorageSection = ({ expanded, onToggle }) => {
                       </div>
                     ))}
                     {group.tabs.length > 3 && (
-                      <div className="text-xs text-slate-400 italic">
+                      <div className="text-xs text-gray-500 italic">
                         +{group.tabs.length - 3} more tabs
                       </div>
                     )}
@@ -239,7 +239,7 @@ const StorageSection = ({ expanded, onToggle }) => {
                   {/* Restore Button */}
                   <button
                     onClick={() => restoreGroup(group)}
-                    className="w-full bg-primary hover:bg-primary-hover text-white text-sm py-2 px-4 rounded font-medium transition-colors"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-4 rounded font-medium transition-colors"
                   >
                     Restore All Tabs
                   </button>
