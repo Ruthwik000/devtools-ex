@@ -2,14 +2,14 @@ import React from 'react';
 
 const Section = ({ title, expanded, onToggle, children }) => {
   return (
-    <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+    <div className="bg-slate-900 rounded-lg border border-slate-800 overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-750 transition-colors"
+        className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-800 transition-colors"
       >
-        <span className="font-medium text-gray-100">{title}</span>
+        <span className="font-medium text-slate-100">{title}</span>
         <svg
-          className={`w-5 h-5 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          className={`w-5 h-5 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -19,7 +19,7 @@ const Section = ({ title, expanded, onToggle, children }) => {
       </button>
       
       {expanded && (
-        <div className="px-4 py-3 border-t border-gray-700 space-y-2">
+        <div className="px-4 py-3 border-t border-slate-800 space-y-2">
           {children}
         </div>
       )}

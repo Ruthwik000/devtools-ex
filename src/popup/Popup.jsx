@@ -35,10 +35,10 @@ const Popup = () => {
   };
 
   return (
-    <div className="bg-gray-900 min-h-full text-gray-100">
-      <div className="bg-gray-800 border-b border-gray-700 p-4">
-        <h1 className="text-lg font-semibold text-white">ExPro</h1>
-        <p className="text-xs text-gray-400 mt-1">Control Center</p>
+    <div className="bg-slate-950 min-h-full text-slate-100">
+      <div className="bg-slate-900 border-b border-slate-800 p-4">
+        <h1 className="text-lg font-semibold text-slate-100">ExPro</h1>
+        <p className="text-xs text-slate-400 mt-1">Control Center</p>
       </div>
 
       <div className="p-3 space-y-2">
