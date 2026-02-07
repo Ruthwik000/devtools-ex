@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import DeveloperTools from './sections/DeveloperTools';
-import LearningTools from './sections/LearningTools';
-import ProductivityTools from './sections/ProductivityTools';
 import StorageSection from './sections/StorageSection';
 
 const Popup = () => {
@@ -35,30 +33,16 @@ const Popup = () => {
   };
 
   return (
-    <div className="bg-gray-900 min-h-full text-gray-100">
-      <div className="bg-gray-800 border-b border-gray-700 p-4">
-        <h1 className="text-lg font-semibold text-white">ExPro</h1>
-        <p className="text-xs text-gray-400 mt-1">Control Center</p>
+    <div className="bg-[#2a2831] min-h-full text-gray-100">
+      <div className="bg-[#37353E] border-b border-[#44444E] p-4">
+        <h1 className="text-lg font-semibold text-white">DevTools</h1>
+        <p className="text-xs text-gray-400 mt-1">Developer Utilities</p>
       </div>
 
       <div className="p-3 space-y-2">
         <DeveloperTools
           expanded={expandedSection === 'developer'}
           onToggle={() => toggleSection('developer')}
-          toggles={toggles}
-          onToggleChange={handleToggle}
-        />
-
-        <LearningTools
-          expanded={expandedSection === 'learning'}
-          onToggle={() => toggleSection('learning')}
-          toggles={toggles}
-          onToggleChange={handleToggle}
-        />
-
-        <ProductivityTools
-          expanded={expandedSection === 'productivity'}
-          onToggle={() => toggleSection('productivity')}
           toggles={toggles}
           onToggleChange={handleToggle}
         />

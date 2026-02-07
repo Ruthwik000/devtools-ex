@@ -12,7 +12,7 @@ const Toggle = ({ label, enabled, onChange, description }) => {
       <button
         onClick={() => onChange(!enabled)}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-          enabled ? 'bg-blue-500' : 'bg-gray-600'
+          enabled ? 'bg-[#6B5B95]' : 'bg-gray-600'
         }`}
       >
         <span

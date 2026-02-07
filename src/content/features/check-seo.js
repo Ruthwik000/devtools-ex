@@ -312,7 +312,12 @@ export function initCheckSEO() {
   // Close panel
   document.getElementById('close-seo-panel').addEventListener('click', () => {
     panel.remove();
-    browserAPI.storage.sync.set({ checkSeo: false });
+    // Update the toggles object to turn off the feature
+    browserAPI.storage.sync.get(['toggles'], (data) => {
+      const toggles = data.toggles || {};
+      toggles.checkSEO = false;
+      browserAPI.storage.sync.set({ toggles });
+    });
   });
 
   // Hover effect for close button

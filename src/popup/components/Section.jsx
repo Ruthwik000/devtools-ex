@@ -2,10 +2,10 @@ import React from 'react';
 
 const Section = ({ title, expanded, onToggle, children }) => {
   return (
-    <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+    <div className="bg-[#37353E] rounded-lg border border-[#44444E] overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-750 transition-colors"
+        className="w-full px-4 py-3 flex items-center justify-between hover:bg-[#44444E] transition-colors"
       >
         <span className="font-medium text-gray-100">{title}</span>
         <svg
@@ -19,7 +19,7 @@ const Section = ({ title, expanded, onToggle, children }) => {
       </button>
       
       {expanded && (
-        <div className="px-4 py-3 border-t border-gray-700 space-y-2">
+        <div className="px-4 py-3 border-t border-[#44444E] space-y-2">
           {children}
         </div>
       )}

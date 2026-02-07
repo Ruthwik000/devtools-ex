@@ -17,7 +17,8 @@ export function initLearningAgentUI() {
   let apiKey = null;
 
   // Load API key
-  chrome.storage.local.get(['groqApiKey'], (result) => {
+  const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
+  browserAPI.storage.sync.get(['groqApiKey'], (result) => {
     if (result.groqApiKey) {
       apiKey = result.groqApiKey;
       if (chatWindow) {
@@ -469,7 +470,7 @@ export function initLearningAgentUI() {
       saveBtn.onclick = () => {
         const key = input.value.trim();
         if (key) {
-          chrome.storage.local.set({ groqApiKey: key }, () => {
+          browserAPI.storage.sync.set({ groqApiKey: key }, () => {
             apiKey = key;
             messages = [];
             updateChatWindow();
@@ -550,10 +551,10 @@ export function initLearningAgentUI() {
     closeBtn.addEventListener('click', () => {
       cleanup();
       // Update the toggles object to turn off the feature
-      chrome.storage.sync.get(['toggles'], (data) => {
+      browserAPI.storage.sync.get(['toggles'], (data) => {
         const toggles = data.toggles || {};
         toggles.learningAgent = false;
-        chrome.storage.sync.set({ toggles });
+        browserAPI.storage.sync.set({ toggles });
       });
     });
 
@@ -629,7 +630,7 @@ export function initLearningAgentUI() {
       if (changeKey) {
         apiKey = null;
         messages = [];
-        chrome.storage.local.remove('groqApiKey');
+        browserAPI.storage.sync.remove('groqApiKey');
         updateChatWindow();
       }
     });

@@ -17,7 +17,7 @@ export function initGitHubChatbotUI() {
   let apiKey = null;
 
   // Load API key
-  chrome.storage.local.get(['groqApiKey'], (result) => {
+  chrome.storage.sync.get(['groqApiKey'], (result) => {
     if (result.groqApiKey) {
       apiKey = result.groqApiKey;
       if (chatWindow) {
@@ -443,7 +443,7 @@ export function initGitHubChatbotUI() {
       saveBtn.onclick = () => {
         const key = input.value.trim();
         if (key) {
-          chrome.storage.local.set({ groqApiKey: key }, () => {
+          chrome.storage.sync.set({ groqApiKey: key }, () => {
             apiKey = key;
             messages = [];
             updateChatWindow();
@@ -614,7 +614,7 @@ export function initGitHubChatbotUI() {
       if (changeKey) {
         apiKey = null;
         messages = [];
-        chrome.storage.local.remove('groqApiKey');
+        chrome.storage.sync.remove('groqApiKey');
         updateChatWindow();
       }
     });

@@ -1,6 +1,6 @@
-# ExPro - Chrome Extension
+# DevTools - Chrome Extension
 
-A Chrome Extension (Manifest V3) providing developer tools, learning utilities, and productivity features through a minimal popup with rich in-page UIs.
+A Chrome Extension (Manifest V3) providing developer tools and utilities through a minimal popup with rich in-page UIs.
 
 ## Quick Start
 
@@ -34,16 +34,7 @@ npm run build
 - **Font Finder** - Hover to see font details with copy functionality
 - **Color Finder** - Professional color picker with eyedropper, history, and webpage analyzer
 - **GitHub Agent** - AI-powered GitHub repository assistant with chatbot UI (Groq API)
-
-### Learning Tools
-- **Ad Blocker** - Block ads and trackers on websites
-- **Speed Improver** - Defer images, block heavy scripts
-- **Learning Agent** - AI assistant to answer questions about any page
-
-### Productivity Tools
-- **YouTube Focus Mode** - Remove distractions, block shorts
-- **Focus Detection** - Detect mobile phone usage via webcam
-- **Nuclear Mode** - Block non-whitelisted sites with timer
+- **Learning Agent** - AI assistant to answer questions about any page (Groq API)
 
 ### Tab Manager
 - **Save Tab Groups** - Collect and save current tabs with a custom name
@@ -64,24 +55,10 @@ npm run build
 ### Learning Agent
 - AI assistant to answer questions about any page
 - Works on any webpage with smart content extraction
-- Floating, draggable, resizable chat interface
-- Markdown rendering for formatted responses
-- Secure API key storage in chrome.storage.local
-- Positioned at top-right for easy access
-
-### YouTube Focus Mode
-- Remove distractions and block shorts on YouTube
-- Clean viewing experience for focused learning
-- Hides recommended videos and distracting elements
-- Toggle on/off from popup
-
-### Focus Detection
-- Detect mobile phone usage via webcam
-- Real-time alerts when phone detected (>60% confidence)
-- Cross-tab alert system - alerts appear on all open tabs
-- Visual feedback with bounding boxes
-- Uses offscreen document for camera access
-- Helps maintain focus during work sessions
+- Floating, draggable chat interface
+- Secure API key storage in chrome.storage.sync
+- Positioned at bottom-right for easy access
+- Powered by Groq API (llama-3.3-70b-versatile)
 
 ### GitHub Agent
 - AI-powered GitHub repository assistant
@@ -90,20 +67,6 @@ npm run build
 - Context-aware responses about current GitHub page
 - Groq API integration for intelligent responses
 - Draggable and resizable interface
-
-### Nuclear Mode
-- Block non-whitelisted sites with timer
-- Timer-based auto-deactivation with countdown display
-- Blocks new tabs and navigation to non-whitelisted sites
-- Add/remove sites from whitelist easily
-- Floating timer panel shows remaining time
-- Managed through chrome.webNavigation API
-
-### Ad Blocker
-- Block ads and trackers on websites
-- Uses declarative net request rules
-- Lightweight and efficient blocking
-- Toggle on/off from popup
 
 ### Tab Manager
 - Save current open tabs as named groups
@@ -130,7 +93,6 @@ npm run build
 │       └── features/               # Feature implementations
 ├── rules/                  # Declarative Net Request rules
 ├── icons/                  # Extension icons
-├── audio/                  # Alert sounds
 ├── logos/                  # Feature logos
 ├── dist/                   # Build output
 ├── manifest.json           # Extension manifest (MV3)
@@ -170,14 +132,14 @@ npm run bundle
 
 1. `bundle-content.js` - Bundles all content script features into single file
 2. `vite build` - Builds React popup UI
-3. `build.js` - Copies manifest, icons, rules, audio, logos to `dist/`
+3. `build.js` - Copies manifest, icons, rules, logos to `dist/`
 
 ### Tech Stack
 
 - React 18.2.0 + Tailwind CSS 3.4.0
 - Vite 5.0.8 (build tool)
 - Chrome Extension Manifest V3
-- External APIs: Groq (AI), Roboflow (computer vision)
+- External APIs: Groq (AI)
 
 ## Design Principles
 

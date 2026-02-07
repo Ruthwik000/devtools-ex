@@ -48,28 +48,6 @@ async function buildExtension() {
   console.log('Copying background script...');
   copyFileSync('src/background/service-worker-bundle.js', 'dist/background.js');
   
-  // Copy offscreen files for focus detection
-  console.log('Copying offscreen files...');
-  copyFileSync('src/offscreen.html', 'dist/offscreen.html');
-  copyFileSync('src/offscreen.js', 'dist/offscreen.js');
-  
-  // Copy audio folder
-  console.log('Copying audio files...');
-  if (!existsSync('dist/audio')) {
-    mkdirSync('dist/audio', { recursive: true });
-  }
-  
-  // Copy all audio files if they exist
-  if (existsSync('audio')) {
-    const audioFiles = readdirSync('audio');
-    audioFiles.forEach(file => {
-      if (file.endsWith('.mp3') || file.endsWith('.wav') || file.endsWith('.md')) {
-        copyFileSync(`audio/${file}`, `dist/audio/${file}`);
-      }
-    });
-    console.log(`Copied ${audioFiles.filter(f => f.endsWith('.mp3') || f.endsWith('.wav')).length} audio files`);
-  }
-  
   // Copy logos folder
   console.log('Copying logos...');
   if (!existsSync('dist/logos')) {

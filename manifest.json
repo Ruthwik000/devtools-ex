@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "ExPro",
+  "name": "DevTools",
   "version": "1.0.0",
-  "description": "Developer tools, learning utilities, and productivity features for all browsers",
+  "description": "Developer tools and utilities for web development",
   "permissions": [
     "storage",
     "tabs",
@@ -11,14 +11,10 @@
     "declarativeNetRequest",
     "declarativeNetRequestWithHostAccess",
     "scripting",
-    "activeTab",
-    "webNavigation",
-    "offscreen",
-    "notifications"
+    "activeTab"
   ],
   "host_permissions": [
-    "<all_urls>",
-    "https://serverless.roboflow.com/*"
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "background.js"
@@ -55,7 +51,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["content.css", "audio/*", "logos/*"],
+      "resources": ["content.css", "logos/*"],
       "matches": ["<all_urls>"]
     }
   ],
