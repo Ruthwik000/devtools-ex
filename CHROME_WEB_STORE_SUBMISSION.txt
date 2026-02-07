@@ -1,0 +1,229 @@
+================================================================================
+CHROME WEB STORE SUBMISSION - DEVTOOLS EXTENSION
+================================================================================
+
+EXTENSION NAME: DevTools
+
+VERSION: 1.0.0
+
+================================================================================
+SINGLE PURPOSE DESCRIPTION
+================================================================================
+
+DevTools provides essential developer utilities including SEO analysis, cookie management, font inspection, color picking, and AI-powered code assistance for GitHub repositories and web page content analysis.
+
+================================================================================
+PERMISSION JUSTIFICATIONS
+================================================================================
+
+1. STORAGE JUSTIFICATION:
+--------------------------
+Required to save user preferences, toggle states, API keys for AI features, and tab group data for the Tab Manager functionality.
+
+
+2. TABS JUSTIFICATION:
+--------------------------
+Required to access current tab information for developer tools features, manage tab groups in Tab Manager, and inject content scripts for SEO checker, cookie editor, and other utilities.
+
+
+3. BROWSINGDATA JUSTIFICATION:
+--------------------------
+Required for the Auto Clear Cache feature which allows developers to clear browser cache on demand for testing purposes.
+
+
+4. COOKIES JUSTIFICATION:
+--------------------------
+Required for the Cookie Editor tool which allows developers to view, edit, create, and delete cookies for testing and debugging web applications.
+
+
+5. DECLARATIVENETREQUEST JUSTIFICATION:
+--------------------------
+Required for optional ad blocking functionality to improve page load times during development and testing.
+
+
+6. DECLARATIVENETREQUESTWITHHOSTACCESS JUSTIFICATION:
+--------------------------
+Required to apply network request filtering rules across all websites for the ad blocking feature.
+
+
+7. SCRIPTING JUSTIFICATION:
+--------------------------
+Required to inject content scripts that provide developer tools UI overlays including SEO checker, font finder, color picker, and cookie editor on web pages.
+
+
+8. ACTIVETAB JUSTIFICATION:
+--------------------------
+Required to access the current active tab's content for analyzing SEO metrics, extracting colors and fonts, and providing AI-powered assistance.
+
+
+9. HOST PERMISSION JUSTIFICATION (<all_urls>):
+--------------------------
+Required to provide developer tools functionality across all websites. The extension needs to inject UI overlays for SEO analysis, cookie editing, font inspection, and color picking on any website the developer is working on.
+
+================================================================================
+REMOTE CODE USAGE
+================================================================================
+
+ARE YOU USING REMOTE CODE?
+--------------------------
+✓ Yes, I am using remote code
+
+JUSTIFICATION:
+--------------------------
+The extension uses Groq AI API (api.groq.com) for the GitHub Agent and Learning Agent features. These AI assistants help developers understand code repositories and analyze web page content. The API calls are made securely using user-provided API keys stored locally.
+
+================================================================================
+DATA USAGE
+================================================================================
+
+WHAT USER DATA DO YOU PLAN TO COLLECT?
+--------------------------
+☐ Personally identifiable information
+☐ Health information
+☐ Financial and payment information
+☐ Authentication information
+☐ Personal communications
+☐ Location
+☐ Web History
+☐ User activity
+☐ Website content
+
+** CHECK NONE OF THE ABOVE **
+
+CERTIFICATIONS (CHECK ALL THREE):
+--------------------------
+✓ I do not sell or transfer user data to third parties, outside of the approved use cases
+
+✓ I do not use or transfer user data for purposes that are unrelated to my item's single purpose
+
+✓ I do not use or transfer user data to determine creditworthiness or for lending purposes
+
+================================================================================
+PRIVACY POLICY
+================================================================================
+
+PRIVACY POLICY URL:
+--------------------------
+https://github.com/Ruthwik000/devtools-ex/blob/main/externalfiles/PRIVACY_POLICY.md
+
+================================================================================
+ADDITIONAL INFORMATION
+================================================================================
+
+CATEGORY:
+--------------------------
+Developer Tools
+
+LANGUAGE:
+--------------------------
+English
+
+PRICING:
+--------------------------
+Free
+
+================================================================================
+STORE LISTING DETAILS
+================================================================================
+
+SHORT DESCRIPTION (132 characters max):
+--------------------------
+Professional developer utilities: SEO checker, cookie editor, font/color tools, AI code assistant, and tab manager.
+
+DETAILED DESCRIPTION:
+--------------------------
+DevTools is a comprehensive Chrome extension designed for web developers, providing essential utilities to streamline development workflow.
+
+KEY FEATURES:
+
+🔧 Developer Tools
+• SEO Checker - Analyze page SEO metrics, meta tags, and heading structure
+• Cookie Editor - View, edit, create, and delete cookies with search and filtering
+• Font Finder - Hover to see font details with copy functionality
+• Color Picker - Professional color picker with eyedropper and format conversion
+• Auto Clear Cache - Automatically clear cache on page refresh
+
+🤖 AI-Powered Assistants
+• GitHub Agent - AI-powered repository assistant with chatbot UI (requires Groq API key)
+• Learning Agent - AI assistant to answer questions about any webpage (requires Groq API key)
+
+📑 Tab Manager
+• Save Tab Groups - Collect and save current tabs with custom names
+• Restore Tab Groups - Restore saved tab groups with one click
+• Manage Groups - View, delete, and organize saved tab groups
+
+PROFESSIONAL UI
+• Modern purple-gray color scheme
+• Clean, intuitive interface
+• Draggable and resizable panels
+• Dark theme optimized for developers
+
+PRIVACY & SECURITY
+• All data stored locally
+• No tracking or analytics
+• Optional AI features require user-provided API keys
+• Open source on GitHub
+
+Perfect for web developers, designers, and anyone who needs powerful browser utilities for development and testing.
+
+SCREENSHOTS NEEDED:
+--------------------------
+1. Main popup showing Developer Tools section
+2. SEO Checker in action
+3. Cookie Editor interface
+4. Color Picker tool
+5. GitHub AI Agent chatbot
+6. Tab Manager interface
+
+PROMOTIONAL IMAGES:
+--------------------------
+• Small tile: 440x280 pixels
+• Large tile: 920x680 pixels
+• Marquee: 1400x560 pixels
+
+================================================================================
+SUPPORT & LINKS
+================================================================================
+
+WEBSITE:
+--------------------------
+https://github.com/Ruthwik000/devtools-ex
+
+SUPPORT EMAIL:
+--------------------------
+[Your support email]
+
+GITHUB REPOSITORY:
+--------------------------
+https://github.com/Ruthwik000/devtools-ex
+
+================================================================================
+SUBMISSION CHECKLIST
+================================================================================
+
+Before submitting:
+☐ All icons generated (16x16, 48x48, 128x128)
+☐ Extension tested in Chrome
+☐ Privacy policy published and accessible
+☐ Screenshots prepared (1280x800 or 640x400)
+☐ Promotional images created
+☐ All permissions justified
+☐ Manifest version 3 compliant
+☐ No console errors
+☐ All features working correctly
+☐ README.md updated
+☐ Version number correct in manifest.json
+
+================================================================================
+NOTES
+================================================================================
+
+• The extension uses Manifest V3 (latest standard)
+• All AI features are optional and require user-provided API keys
+• No user data is collected or transmitted except to user's own API endpoints
+• Extension is fully functional without AI features
+• All code is open source and available on GitHub
+
+================================================================================
+END OF SUBMISSION DOCUMENT
+================================================================================

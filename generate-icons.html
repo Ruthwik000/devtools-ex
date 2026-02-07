@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate DevTools Icons</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            background: #2a2831;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #6B5B95;
+            margin-bottom: 20px;
+        }
+        .preview {
+            display: flex;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .icon-preview {
+            text-align: center;
+            background: #37353E;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        canvas {
+            border: 2px solid #44444E;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        button {
+            background: #6B5B95;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #7B6BA5;
+        }
+        .info {
+            background: #37353E;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            border-left: 4px solid #6B5B95;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛠️ DevTools Icon Generator</h1>
+        <p>Generate icons for the DevTools Chrome Extension</p>
+        
+        <div class="preview" id="preview"></div>
+        
+        <div>
+            <button onclick="generateIcons()">Generate Icons</button>
+            <button onclick="downloadAll()">Download All</button>
+        </div>
+        
+        <div class="info">
+            <strong>Instructions:</strong>
+            <ol>
+                <li>Click "Generate Icons" to create the icons</li>
+                <li>Click "Download All" to save them</li>
+                <li>Replace the files in the <code>icons/</code> folder</li>
+                <li>Rebuild the extension with <code>npm run build</code></li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const sizes = [16, 48, 128];
+        const canvases = {};
+
+        function generateIcons() {
+            const preview = document.getElementById('preview');
+            preview.innerHTML = '';
+
+            sizes.forEach(size => {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+
+                // Background gradient
+                const gradient = ctx.createLinearGradient(0, 0, size, size);
+                gradient.addColorStop(0, '#6B5B95');
+                gradient.addColorStop(1, '#4A3B6B');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, size, size);
+
+                // Draw "DT" text
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = `bold ${size * 0.4}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('DT', size / 2, size / 2);
+
+                // Add subtle border
+                ctx.strokeStyle = '#8B7BB5';
+                ctx.lineWidth = size * 0.05;
+                ctx.strokeRect(0, 0, size, size);
+
+                canvases[size] = canvas;
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'icon-preview';
+                wrapper.innerHTML = `
+                    <canvas width="${size}" height="${size}"></canvas>
+                    <div>${size}x${size}</div>
+                `;
+                const displayCanvas = wrapper.querySelector('canvas');
+                displayCanvas.getContext('2d').drawImage(canvas, 0, 0);
+                preview.appendChild(wrapper);
+            });
+        }
+
+        function downloadAll() {
+            sizes.forEach(size => {
+                if (canvases[size]) {
+                    canvases[size].toBlob(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `icon${size}.png`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    });
+                }
+            });
+        }
+
+        // Generate icons on load
+        window.onload = generateIcons;
+    </script>
+</body>
+</html>
